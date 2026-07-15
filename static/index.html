@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Persona Bench — AI Chatbot Evaluator</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 24px 16px; background: #0f1115; color: #e6e6e6; }
+  h1 { font-size: 1.6rem; margin-bottom: 4px; }
+  .subtitle { color: #9aa0aa; font-size: 0.95rem; margin-bottom: 24px; }
+
+  /* Controls */
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 24px; }
+  .controls button { background: #e8533f; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: opacity 0.2s; }
+  .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .controls button.weak-btn { background: #e8533f; }
+  .controls button.improved-btn { background: #22c55e; }
+  .controls button.compare-btn { background: #6366f1; }
+  .controls select { background: #1a1d24; color: #e6e6e6; border: 1px solid #2a2d34; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; }
+
+  /* Status */
+  #status { margin-bottom: 16px; font-size: 0.9rem; color: #9aa0aa; min-height: 24px; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #9aa0aa; border-top-color: #e8533f; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Comparison layout */
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } }
+
+  /* Config panel */
+  .config-panel { border: 1px solid #2a2d34; border-radius: 12px; background: #171a21; overflow: hidden; }
+  .config-panel.weak { border-top: 3px solid #e8533f; }
+  .config-panel.improved { border-top: 3px solid #22c55e; }
+
+  .config-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d34; }
+  .config-header h2 { font-size: 1.05rem; font-weight: 600; }
+  .config-header .tag { font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .weak .tag { background: rgba(232,83,63,0.15); color: #e8533f; }
+  .improved .tag { background: rgba(34,197,94,0.15); color: #22c55e; }
+
+  /* Summary bar */
+  .summary-bar { display: flex; gap: 16px; padding: 14px 20px; border-bottom: 1px solid #2a2d34; flex-wrap: wrap; }
+  .summary-stat { display: flex; flex-direction: column; align-items: center; }
+  .summary-stat .num { font-size: 1.4rem; font-weight: 700; }
+  .summary-stat .label { font-size: 0.75rem; color: #9aa0aa; margin-top: 2px; }
+  .num-pass { color: #4ade80; }
+  .num-fail { color: #f87171; }
+  .num-halluc { color: #fbbf24; }
+  .num-error { color: #9aa0aa; }
+
+  /* Persona card */
+  .persona-card { padding: 14px 20px; border-bottom: 1px solid #1e2028; cursor: pointer; transition: background 0.15s; }
+  .persona-card:hover { background: #1e2028; }
+  .persona-card:last-child { border-bottom: none; }
+  .persona-card-header { display: flex; justify-content: space-between; align-items: center; }
+  .persona-card-header strong { font-size: 0.9rem; }
+  .verdict-badge { font-size: 0.75rem; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
+  .verdict-badge.pass { background: rgba(74,222,128,0.15); color: #4ade80; }
+  .verdict-badge.fail { background: rgba(248,113,113,0.15); color: #f87171; }
+  .verdict-badge.error { background: rgba(156,163,175,0.15); color: #9aa0aa; }
+  .persona-card-meta { font-size: 0.8rem; color: #9aa0aa; margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
+  .persona-card-notes { font-size: 0.82rem; color: #b0b5be; margin-top: 6px; line-height: 1.4; }
+
+  /* Transcript expand */
+  .transcript-toggle { font-size: 0.8rem; color: #6366f1; cursor: pointer; margin-top: 8px; user-select: none; }
+  .transcript-toggle:hover { text-decoration: underline; }
+  .transcript-content { display: none; margin-top: 10px; max-height: 300px; overflow-y: auto; background: #0f1115; border-radius: 8px; padding: 12px; font-size: 0.82rem; line-height: 1.6; }
+  .transcript-content.open { display: block; }
+  .transcript-content .turn { margin-bottom: 8px; }
+  .transcript-content .speaker { font-weight: 600; color: #9aa0aa; }
+  .transcript-content .speaker.agent-speak { color: #22c55e; }
+  .transcript-content .speaker.user-speak { color: #6366f1; }
+
+  /* Empty state */
+  .empty-state { text-align: center; padding: 60px 20px; color: #9aa0aa; }
+  .empty-state p { margin-bottom: 8px; }
+  .empty-state .hint { font-size: 0.85rem; }
+
+  /* Instruction banner */
+  .instruction-banner { background: #1a1d24; border: 1px solid #2a2d34; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; }
+  .instruction-banner h3 { font-size: 0.9rem; margin-bottom: 6px; color: #e6e6e6; }
+  .instruction-banner p { font-size: 0.85rem; color: #9aa0aa; line-height: 1.5; }
+
+  /* Footer */
+  footer { margin-top: 48px; padding: 16px 0; border-top: 1px solid #2a2d34; text-align: center; font-size: 0.8rem; color: #555; }
+</style>
+</head>
+<body>
+  <h1>🧪 Persona Bench</h1>
+  <p class="subtitle">Catch AI chatbot failures before your users do — test with simulated adversarial personas.</p>
+
+  <div class="instruction-banner">
+    <h3>How to demo</h3>
+    <p>
+      1. Click <strong>"Run Weak Bot"</strong> — this is a support bot that guesses when unsure (bad practice).<br>
+      2. Click <strong>"Run Improved Bot"</strong> — this bot admits uncertainty and escalates.<br>
+      3. The side-by-side comparison shows the improvement at a glance. Expand any card to read the full transcript.
+    </p>
+  </div>
+
+  <div class="controls">
+    <button id="runWeakBtn" class="weak-btn">Run Weak Bot</button>
+    <button id="runImprovedBtn" class="improved-btn">Run Improved Bot</button>
+    <select id="personaSelect">
+      <option value="all">All Personas</option>
+      <option value="adversarial" selected>Adversarial Tester (recommended)</option>
+    </select>
+  </div>
+
+  <div id="status"></div>
+  <div id="results"></div>
+
+  <footer>Persona Bench — OpenAI Codex Hackathon 2025</footer>
+
+<script>
+const statusEl = document.getElementById('status');
+const resultsEl = document.getElementById('results');
+const runWeakBtn = document.getElementById('runWeakBtn');
+const runImprovedBtn = document.getElementById('runImprovedBtn');
+const personaSelect = document.getElementById('personaSelect');
+
+// State: store latest run_id per config
+const runs = { weak: null, improved: null };
+let running = false;
+
+// Load persona list
+fetch('/personas').then(r => r.json()).then(personas => {
+  for (const [key, name] of Object.entries(personas)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = name;
+    personaSelect.appendChild(opt);
+  }
+});
+
+function getPersonaKeys() {
+  const val = personaSelect.value;
+  return val === 'all' ? null : [val];
+}
+
+async function startRun(config) {
+  if (running) return;
+  running = true;
+  runWeakBtn.disabled = true;
+  runImprovedBtn.disabled = true;
+  statusEl.innerHTML = '<span class="spinner"></span> Running personas against <strong>' + config + '</strong> bot...';
+  resultsEl.innerHTML = '';
+
+  const body = { num_turns: 5, target_config: config };
+  const selectedPersonas = getPersonaKeys();
+  if (selectedPersonas) body.persona_keys = selectedPersonas;
+
+  try {
+    const startRes = await fetch('/run-eval', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const { run_id, error } = await startRes.json();
+    if (error) {
+      statusEl.textContent = 'Error: ' + error;
+      running = false;
+      runWeakBtn.disabled = false;
+      runImprovedBtn.disabled = false;
+      return;
+    }
+    runs[config] = run_id;
+    pollForResults(run_id, config);
+  } catch (e) {
+    statusEl.textContent = 'Failed to start evaluation: ' + e.message;
+    running = false;
+    runWeakBtn.disabled = false;
+    runImprovedBtn.disabled = false;
+  }
+}
+
+async function pollForResults(runId, config) {
+  const res = await fetch('/results/' + runId);
+  const data = await res.json();
+
+  if (data.status === 'done') {
+    statusEl.textContent = 'Done — ' + data.results.length + ' personas tested.';
+    running = false;
+    runWeakBtn.disabled = false;
+    runImprovedBtn.disabled = false;
+    renderComparison();
+  } else if (data.status === 'not_found') {
+    statusEl.textContent = 'Run not found (may have been pruned).';
+    running = false;
+    runWeakBtn.disabled = false;
+    runImprovedBtn.disabled = false;
+  } else {
+    setTimeout(() => pollForResults(runId, config), 2000);
+  }
+}
+
+async function fetchRunResults(runId) {
+  if (!runId) return null;
+  const res = await fetch('/results/' + runId);
+  const data = await res.json();
+  return data.status === 'done' ? data : null;
+}
+
+function summarize(results) {
+  let pass = 0, fail = 0, halluc = 0, error = 0;
+  for (const r of results) {
+    const v = r.verdict;
+    if (v.overall_verdict === 'pass') pass++;
+    else if (v.overall_verdict === 'fail') fail++;
+    else error++;
+    if (v.hallucination_detected === true) halluc++;
+  }
+  return { pass, fail, halluc, error, total: results.length };
+}
+
+function renderTranscript(transcript) {
+  if (!transcript || transcript.length === 0) return '<em>No transcript available (error during eval).</em>';
+  return transcript.map(t => {
+    const cls = t.speaker === 'agent' ? 'agent-speak' : 'user-speak';
+    const label = t.speaker === 'agent' ? 'Agent' : 'User';
+    const escaped = t.text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    return '<div class="turn"><span class="speaker ' + cls + '">' + label + ':</span> ' + escaped + '</div>';
+  }).join('');
+}
+
+function renderConfigPanel(label, configKey, results) {
+  const cls = configKey === 'weak' ? 'weak' : 'improved';
+  const tagText = configKey === 'weak' ? 'Hallucination-Prone' : 'Safe Fallback';
+  const summary = summarize(results);
+
+  let cardsHtml = '';
+  for (const r of results) {
+    const v = r.verdict;
+    const badgeCls = v.overall_verdict === 'pass' ? 'pass' : (v.overall_verdict === 'fail' ? 'fail' : 'error');
+    const badgeText = (v.overall_verdict || 'error').toUpperCase();
+    const hallucText = v.hallucination_detected === true ? '⚠️ Yes' : (v.hallucination_detected === false ? 'No' : '—');
+    const taskText = v.task_completed === true ? '✅' : (v.task_completed === false ? '❌' : '—');
+    const topicText = v.stayed_on_topic === true ? '✅' : (v.stayed_on_topic === false ? '❌' : '—');
+    const hallucEvidence = v.hallucination_evidence ? ' — <span style="color:#fbbf24;">"' + v.hallucination_evidence.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '"</span>' : '';
+
+    cardsHtml += '<div class="persona-card" onclick="toggleTranscript(this)">' +
+      '<div class="persona-card-header"><strong>' + r.persona_name + '</strong>' +
+      '<span class="verdict-badge ' + badgeCls + '">' + badgeText + '</span></div>' +
+      '<div class="persona-card-meta">' +
+        '<span>Hallucination: ' + hallucText + hallucEvidence + '</span>' +
+        '<span>Task: ' + taskText + '</span>' +
+        '<span>On-topic: ' + topicText + '</span>' +
+      '</div>' +
+      (v.notes ? '<div class="persona-card-notes">' + v.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' : '') +
+      '<div class="transcript-toggle">▸ Show transcript</div>' +
+      '<div class="transcript-content">' + renderTranscript(r.transcript) + '</div>' +
+    '</div>';
+  }
+
+  return '<div class="config-panel ' + cls + '">' +
+    '<div class="config-header"><h2>' + label + '</h2><span class="tag">' + tagText + '</span></div>' +
+    '<div class="summary-bar">' +
+      '<div class="summary-stat"><span class="num num-pass">' + summary.pass + '</span><span class="label">PASS</span></div>' +
+      '<div class="summary-stat"><span class="num num-fail">' + summary.fail + '</span><span class="label">FAIL</span></div>' +
+      '<div class="summary-stat"><span class="num num-halluc">' + summary.halluc + '</span><span class="label">HALLUCINATION</span></div>' +
+      '<div class="summary-stat"><span class="num">' + summary.total + '</span><span class="label">TOTAL</span></div>' +
+    '</div>' +
+    cardsHtml +
+  '</div>';
+}
+
+async function renderComparison() {
+  const weakResults = await fetchRunResults(runs.weak);
+  const improvedResults = await fetchRunResults(runs.improved);
+
+  if (!weakResults && !improvedResults) {
+    resultsEl.innerHTML = '<div class="empty-state"><p>No evaluation results yet.</p><p class="hint">Click a button above to run an evaluation.</p></div>';
+    return;
+  }
+
+  let html = '<div class="comparison">';
+  if (weakResults) {
+    html += renderConfigPanel('Weak Bot', 'weak', weakResults.results);
+  } else {
+    html += '<div class="config-panel weak"><div class="config-header"><h2>Weak Bot</h2><span class="tag">Not yet run</span></div>' +
+      '<div class="empty-state"><p class="hint">Click "Run Weak Bot" to test.</p></div></div>';
+  }
+  if (improvedResults) {
+    html += renderConfigPanel('Improved Bot', 'improved', improvedResults.results);
+  } else {
+    html += '<div class="config-panel improved"><div class="config-header"><h2>Improved Bot</h2><span class="tag">Not yet run</span></div>' +
+      '<div class="empty-state"><p class="hint">Click "Run Improved Bot" to test.</p></div></div>';
+  }
+  html += '</div>';
+  resultsEl.innerHTML = html;
+}
+
+function toggleTranscript(cardEl) {
+  const content = cardEl.querySelector('.transcript-content');
+  const toggle = cardEl.querySelector('.transcript-toggle');
+  if (content.classList.contains('open')) {
+    content.classList.remove('open');
+    toggle.textContent = '▸ Show transcript';
+  } else {
+    content.classList.add('open');
+    toggle.textContent = '▾ Hide transcript';
+  }
+}
+
+runWeakBtn.addEventListener('click', () => startRun('weak'));
+runImprovedBtn.addEventListener('click', () => startRun('improved'));
+
+// On page load, render any existing comparison
+renderComparison();
+</script>
+</body>
+</html>
