@@ -16,7 +16,7 @@
   .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
   .controls button.weak-btn { background: #e8533f; }
   .controls button.improved-btn { background: #22c55e; }
-  .controls button.compare-btn { background: #6366f1; }
+  .controls button.custom-btn { background: #6366f1; }
   .controls select { background: #1a1d24; color: #e6e6e6; border: 1px solid #2a2d34; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; }
 
   /* Status */
@@ -26,18 +26,21 @@
 
   /* Comparison layout */
   .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-  @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } }
+  .comparison.triple { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } .comparison.triple { grid-template-columns: 1fr; } }
 
   /* Config panel */
   .config-panel { border: 1px solid #2a2d34; border-radius: 12px; background: #171a21; overflow: hidden; }
   .config-panel.weak { border-top: 3px solid #e8533f; }
   .config-panel.improved { border-top: 3px solid #22c55e; }
+  .config-panel.custom { border-top: 3px solid #6366f1; }
 
   .config-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d34; }
   .config-header h2 { font-size: 1.05rem; font-weight: 600; }
   .config-header .tag { font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
   .weak .tag { background: rgba(232,83,63,0.15); color: #e8533f; }
   .improved .tag { background: rgba(34,197,94,0.15); color: #22c55e; }
+  .custom .tag { background: rgba(99,102,241,0.15); color: #6366f1; }
 
   /* Summary bar */
   .summary-bar { display: flex; gap: 16px; padding: 14px 20px; border-bottom: 1px solid #2a2d34; flex-wrap: wrap; }
@@ -82,6 +85,29 @@
   .instruction-banner h3 { font-size: 0.9rem; margin-bottom: 6px; color: #e6e6e6; }
   .instruction-banner p { font-size: 0.85rem; color: #9aa0aa; line-height: 1.5; }
 
+  /* BYO Agent collapsible section */
+  .byo-section { margin-bottom: 24px; border: 1px solid #2a2d34; border-radius: 12px; background: #171a21; overflow: hidden; }
+  .byo-toggle { width: 100%; background: none; border: none; color: #e6e6e6; padding: 14px 20px; text-align: left; cursor: pointer; font-size: 0.95rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .byo-toggle:hover { background: #1e2028; }
+  .byo-toggle .arrow { transition: transform 0.2s; font-size: 0.8rem; color: #9aa0aa; }
+  .byo-toggle .arrow.open { transform: rotate(90deg); }
+  .byo-body { display: none; padding: 0 20px 20px; }
+  .byo-body.open { display: block; }
+  .byo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  @media (max-width: 500px) { .byo-row { grid-template-columns: 1fr; } }
+  .byo-field { margin-bottom: 14px; }
+  .byo-field label { display: block; font-size: 0.82rem; color: #9aa0aa; margin-bottom: 4px; font-weight: 500; }
+  .byo-field input, .byo-field textarea, .byo-field select { width: 100%; background: #0f1115; color: #e6e6e6; border: 1px solid #2a2d34; border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace; }
+  .byo-field input::placeholder, .byo-field textarea::placeholder { color: #555; }
+  .byo-field textarea { min-height: 60px; resize: vertical; }
+  .byo-hint { font-size: 0.78rem; color: #666; margin-top: 4px; line-height: 1.4; }
+  .byo-hint code { background: #0f1115; padding: 1px 5px; border-radius: 3px; font-size: 0.78rem; color: #fbbf24; }
+  .byo-actions { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
+  .byo-advanced { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2d34; }
+  .byo-advanced.open { display: block; }
+  .byo-advanced-toggle { font-size: 0.8rem; color: #6366f1; cursor: pointer; margin-top: 12px; user-select: none; }
+  .byo-advanced-toggle:hover { text-decoration: underline; }
+
   /* Footer */
   footer { margin-top: 48px; padding: 16px 0; border-top: 1px solid #2a2d34; text-align: center; font-size: 0.8rem; color: #555; }
 </style>
@@ -108,25 +134,131 @@
     </select>
   </div>
 
+  <!-- BYO Agent Section -->
+  <div class="byo-section">
+    <button class="byo-toggle" id="byoToggle">
+      <span>🔌 Test Your Own Agent</span>
+      <span class="arrow" id="byoArrow">▸</span>
+    </button>
+    <div class="byo-body" id="byoBody">
+      <p style="font-size:0.82rem; color:#9aa0aa; margin-bottom:14px; line-height:1.5;">
+        Point Persona Bench at any HTTP chatbot API. Pick a format, paste your URL, and go.
+      </p>
+
+      <div class="byo-row">
+        <div class="byo-field" style="margin-bottom:0;">
+          <label>Endpoint URL <span style="color:#f87171">*</span></label>
+          <input type="text" id="byoUrl" placeholder="https://api.your-service.com/v1/chat" style="font-family:inherit;" />
+        </div>
+        <div class="byo-field" style="margin-bottom:0;">
+          <label>API Key <span style="color:#666;">(optional)</span></label>
+          <input type="password" id="byoApiKey" placeholder="sk-..." style="font-family:inherit;" />
+        </div>
+      </div>
+
+      <div class="byo-field">
+        <label>API Format</label>
+        <select id="byoFormat" style="font-family:inherit;">
+          <option value="openai">OpenAI-compatible (messages array)</option>
+          <option value="simple">Simple (single message string)</option>
+          <option value="custom">Custom — I'll define the request myself</option>
+        </select>
+        <div class="byo-hint" id="byoFormatHint">
+          Sends <code>{"messages": [...]}</code> and extracts <code>choices.0.message.content</code>. Works with OpenAI, Together, Groq, most hosted LLMs.
+        </div>
+      </div>
+
+      <!-- Advanced: shown only when format=custom -->
+      <div class="byo-advanced" id="byoAdvanced">
+        <div class="byo-field">
+          <label>Request Body Template <span style="color:#f87171">*</span></label>
+          <textarea id="byoBodyTemplate" rows="3" placeholder='{"message": "{{message}}"}'></textarea>
+          <div class="byo-hint">
+            <code>{{message}}</code> = latest user message (string). <code>{{history}}</code> = full conversation as JSON array (must be <strong>outside</strong> quotes).
+          </div>
+        </div>
+        <div class="byo-field">
+          <label>Response Path <span style="color:#f87171">*</span></label>
+          <input type="text" id="byoResponsePath" placeholder="reply" />
+          <div class="byo-hint">
+            Dot-notation path to the reply text. E.g. <code>reply</code>, <code>choices.0.message.content</code>
+          </div>
+        </div>
+        <div class="byo-field">
+          <label>Extra Headers (JSON)</label>
+          <textarea id="byoHeaders" rows="2" placeholder='{"X-Custom": "value"}'></textarea>
+        </div>
+      </div>
+
+      <div class="byo-actions">
+        <button id="runCustomBtn" class="custom-btn">Run Against My Agent</button>
+        <span id="byoError" style="color:#f87171; font-size:0.85rem;"></span>
+      </div>
+    </div>
+  </div>
+
   <div id="status"></div>
   <div id="results"></div>
 
-  <footer>Persona Bench — OpenAI Codex Hackathon 2026</footer>
+  <footer>Persona Bench — OpenAI Codex Hackathon 2025</footer>
 
 <script>
 const statusEl = document.getElementById('status');
 const resultsEl = document.getElementById('results');
 const runWeakBtn = document.getElementById('runWeakBtn');
 const runImprovedBtn = document.getElementById('runImprovedBtn');
+const runCustomBtn = document.getElementById('runCustomBtn');
 const personaSelect = document.getElementById('personaSelect');
+const byoToggle = document.getElementById('byoToggle');
+const byoBody = document.getElementById('byoBody');
+const byoArrow = document.getElementById('byoArrow');
+const byoError = document.getElementById('byoError');
+const byoFormat = document.getElementById('byoFormat');
+const byoAdvanced = document.getElementById('byoAdvanced');
+const byoFormatHint = document.getElementById('byoFormatHint');
 
 // State: store latest run_id per config
-const runs = { weak: null, improved: null };
+const runs = { weak: null, improved: null, custom: null };
 let running = false;
+
+// Format presets: body_template and response_path for each format
+const FORMAT_PRESETS = {
+  openai: {
+    body_template: '{"messages": {{history}}}',
+    response_path: 'choices.0.message.content',
+    hint: 'Sends <code>{"messages": [...]}</code> and extracts <code>choices.0.message.content</code>. Works with OpenAI, Together, Groq, most hosted LLMs.'
+  },
+  simple: {
+    body_template: '{"message": "{{message}}"}',
+    response_path: 'reply',
+    hint: 'Sends <code>{"message": "..."}</code> and extracts the <code>reply</code> field. For simple chatbot endpoints.'
+  },
+};
+
+// BYO collapsible toggle
+byoToggle.addEventListener('click', () => {
+  byoBody.classList.toggle('open');
+  byoArrow.classList.toggle('open');
+});
+
+// Format dropdown: show/hide advanced section
+byoFormat.addEventListener('change', () => {
+  const fmt = byoFormat.value;
+  if (fmt === 'custom') {
+    byoAdvanced.classList.add('open');
+    byoFormatHint.style.display = 'none';
+  } else {
+    byoAdvanced.classList.remove('open');
+    byoFormatHint.style.display = 'block';
+    byoFormatHint.innerHTML = FORMAT_PRESETS[fmt].hint;
+  }
+});
 
 // Load persona list
 fetch('/personas').then(r => r.json()).then(personas => {
   for (const [key, name] of Object.entries(personas)) {
+    // Skip if already added (adversarial is hardcoded as default)
+    if (personaSelect.querySelector(`option[value="${key}"]`)) continue;
     const opt = document.createElement('option');
     opt.value = key;
     opt.textContent = name;
@@ -139,11 +271,17 @@ function getPersonaKeys() {
   return val === 'all' ? null : [val];
 }
 
+function setRunning(isRunning) {
+  running = isRunning;
+  runWeakBtn.disabled = isRunning;
+  runImprovedBtn.disabled = isRunning;
+  runCustomBtn.disabled = isRunning;
+}
+
 async function startRun(config) {
   if (running) return;
-  running = true;
-  runWeakBtn.disabled = true;
-  runImprovedBtn.disabled = true;
+  setRunning(true);
+  byoError.textContent = '';
   statusEl.innerHTML = '<span class="spinner"></span> Running personas against <strong>' + config + '</strong> bot...';
   resultsEl.innerHTML = '';
 
@@ -160,18 +298,88 @@ async function startRun(config) {
     const { run_id, error } = await startRes.json();
     if (error) {
       statusEl.textContent = 'Error: ' + error;
-      running = false;
-      runWeakBtn.disabled = false;
-      runImprovedBtn.disabled = false;
+      setRunning(false);
       return;
     }
     runs[config] = run_id;
     pollForResults(run_id, config);
   } catch (e) {
     statusEl.textContent = 'Failed to start evaluation: ' + e.message;
-    running = false;
-    runWeakBtn.disabled = false;
-    runImprovedBtn.disabled = false;
+    setRunning(false);
+  }
+}
+
+async function startCustomRun() {
+  if (running) return;
+  byoError.textContent = '';
+
+  const url = document.getElementById('byoUrl').value.trim();
+  const apiKey = document.getElementById('byoApiKey').value.trim();
+  const fmt = byoFormat.value;
+
+  // Validate URL
+  if (!url) { byoError.textContent = 'Endpoint URL is required.'; return; }
+  if (!url.startsWith('http://') && !url.startsWith('https://')) { byoError.textContent = 'URL must start with http:// or https://'; return; }
+
+  // Resolve body template and response path from preset or custom fields
+  let bodyTemplate, responsePath, extraHeaders = {};
+  if (fmt === 'custom') {
+    bodyTemplate = document.getElementById('byoBodyTemplate').value.trim();
+    responsePath = document.getElementById('byoResponsePath').value.trim();
+    const headersRaw = document.getElementById('byoHeaders').value.trim();
+    if (!bodyTemplate) { byoError.textContent = 'Request Body Template is required.'; return; }
+    if (!responsePath) { byoError.textContent = 'Response Path is required.'; return; }
+    if (headersRaw) {
+      try { extraHeaders = JSON.parse(headersRaw); }
+      catch { byoError.textContent = 'Extra Headers must be valid JSON.'; return; }
+    }
+    // Validate template renders to valid JSON
+    try {
+      const test = bodyTemplate.replace(/\{\{message\}\}/g, 'test').replace(/\{\{history\}\}/g, '[]');
+      JSON.parse(test);
+    } catch {
+      byoError.textContent = 'Body Template must be valid JSON (with {{message}}/{{history}} placeholders).';
+      return;
+    }
+  } else {
+    const preset = FORMAT_PRESETS[fmt];
+    bodyTemplate = preset.body_template;
+    responsePath = preset.response_path;
+  }
+
+  // Build headers: always include Content-Type, add Authorization if API key provided
+  const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+  if (apiKey) {
+    headers['Authorization'] = 'Bearer ' + apiKey;
+  }
+
+  const custom_target = { url, headers, body_template: bodyTemplate, response_path: responsePath };
+
+  setRunning(true);
+  statusEl.innerHTML = '<span class="spinner"></span> Running personas against <strong>your agent</strong> at ' + url.substring(0, 40) + '...';
+  resultsEl.innerHTML = '';
+
+  const body = { num_turns: 5, target_config: 'weak', custom_target };
+  const selectedPersonas = getPersonaKeys();
+  if (selectedPersonas) body.persona_keys = selectedPersonas;
+
+  try {
+    const startRes = await fetch('/run-eval', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const { run_id, error } = await startRes.json();
+    if (error) {
+      statusEl.textContent = 'Error: ' + error;
+      setRunning(false);
+      return;
+    }
+    runs.custom = run_id;
+    pollForResults(run_id, 'custom');
+  } catch (e) {
+    statusEl.textContent = 'Failed to start evaluation: ' + e.message;
+    setRunning(false);
   }
 }
 
@@ -181,15 +389,11 @@ async function pollForResults(runId, config) {
 
   if (data.status === 'done') {
     statusEl.textContent = 'Done — ' + data.results.length + ' personas tested.';
-    running = false;
-    runWeakBtn.disabled = false;
-    runImprovedBtn.disabled = false;
+    setRunning(false);
     renderComparison();
   } else if (data.status === 'not_found') {
     statusEl.textContent = 'Run not found (may have been pruned).';
-    running = false;
-    runWeakBtn.disabled = false;
-    runImprovedBtn.disabled = false;
+    setRunning(false);
   } else {
     setTimeout(() => pollForResults(runId, config), 2000);
   }
@@ -224,9 +428,11 @@ function renderTranscript(transcript) {
   }).join('');
 }
 
-function renderConfigPanel(label, configKey, results) {
-  const cls = configKey === 'weak' ? 'weak' : 'improved';
-  const tagText = configKey === 'weak' ? 'Hallucination-Prone' : 'Safe Fallback';
+function renderConfigPanel(label, configKey, results, tagText) {
+  const cls = configKey === 'weak' ? 'weak' : (configKey === 'improved' ? 'improved' : 'custom');
+  if (!tagText) {
+    tagText = configKey === 'weak' ? 'Hallucination-Prone' : (configKey === 'improved' ? 'Safe Fallback' : 'Your Agent');
+  }
   const summary = summarize(results);
 
   let cardsHtml = '';
@@ -268,25 +474,35 @@ function renderConfigPanel(label, configKey, results) {
 async function renderComparison() {
   const weakResults = await fetchRunResults(runs.weak);
   const improvedResults = await fetchRunResults(runs.improved);
+  const customResults = await fetchRunResults(runs.custom);
+  const hasCustom = customResults !== null;
 
-  if (!weakResults && !improvedResults) {
+  if (!weakResults && !improvedResults && !customResults) {
     resultsEl.innerHTML = '<div class="empty-state"><p>No evaluation results yet.</p><p class="hint">Click a button above to run an evaluation.</p></div>';
     return;
   }
 
-  let html = '<div class="comparison">';
+  const colClass = (weakResults && improvedResults && hasCustom) ? 'comparison triple' : 'comparison';
+  let html = '<div class="' + colClass + '">';
+
   if (weakResults) {
-    html += renderConfigPanel('Weak Bot', 'weak', weakResults.results);
+    html += renderConfigPanel('Weak Bot', 'weak', weakResults.results, null);
   } else {
     html += '<div class="config-panel weak"><div class="config-header"><h2>Weak Bot</h2><span class="tag">Not yet run</span></div>' +
       '<div class="empty-state"><p class="hint">Click "Run Weak Bot" to test.</p></div></div>';
   }
   if (improvedResults) {
-    html += renderConfigPanel('Improved Bot', 'improved', improvedResults.results);
+    html += renderConfigPanel('Improved Bot', 'improved', improvedResults.results, null);
   } else {
     html += '<div class="config-panel improved"><div class="config-header"><h2>Improved Bot</h2><span class="tag">Not yet run</span></div>' +
       '<div class="empty-state"><p class="hint">Click "Run Improved Bot" to test.</p></div></div>';
   }
+  if (hasCustom) {
+    const label = customResults.target_config_label || 'Your Agent';
+    const shortLabel = label.length > 35 ? label.substring(0, 35) + '…' : label;
+    html += renderConfigPanel(shortLabel, 'custom', customResults.results, 'Your Agent');
+  }
+
   html += '</div>';
   resultsEl.innerHTML = html;
 }
@@ -305,6 +521,7 @@ function toggleTranscript(cardEl) {
 
 runWeakBtn.addEventListener('click', () => startRun('weak'));
 runImprovedBtn.addEventListener('click', () => startRun('improved'));
+runCustomBtn.addEventListener('click', startCustomRun);
 
 // On page load, render any existing comparison
 renderComparison();

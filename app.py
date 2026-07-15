@@ -10,7 +10,6 @@ Then open http://localhost:8000
 
 import uuid
 import asyncio
-import traceback
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -32,19 +31,46 @@ class RunEvalRequest(BaseModel):
     persona_keys: list[str] = list(PERSONAS.keys())  # default: run all
     num_turns: int = 5
     target_config: str = "weak"
+    custom_target: dict | None = None  # BYO agent: {url, method, headers, body_template, response_path}
+
+
+def _validate_url(url: str) -> str | None:
+    """Return an error message if the URL is invalid, else None."""
+    if not url:
+        return "custom_target.url is required."
+    if not url.startswith(("http://", "https://")):
+        return "custom_target.url must start with http:// or https://"
+    return None
 
 
 @app.post("/run-eval")
 async def run_eval(req: RunEvalRequest):
-    # Validate target_config
-    if req.target_config not in TARGET_CONFIGS:
-        return {"error": f"Unknown target_config. Must be one of: {list(TARGET_CONFIGS.keys())}"}
+    # If custom_target is provided, it takes priority over target_config
+    use_custom = req.custom_target is not None
+
+    if use_custom:
+        # Validate custom_target
+        ct = req.custom_target
+        url_err = _validate_url(ct.get("url", ""))
+        if url_err:
+            return {"error": url_err}
+
+        run_label = f"Custom: {ct['url'][:50]}"
+        if ct.get("response_path"):
+            run_label += f" (→ {ct['response_path']})"
+        config_key = "custom"
+        config_label = run_label
+    else:
+        # Validate target_config (built-in weak/improved)
+        if req.target_config not in TARGET_CONFIGS:
+            return {"error": f"Unknown target_config. Must be one of: {list(TARGET_CONFIGS.keys())}"}
+        config_key = req.target_config
+        config_label = TARGET_CONFIGS[req.target_config]["name"]
 
     run_id = str(uuid.uuid4())
-    config_label = TARGET_CONFIGS[req.target_config]["name"]
     RESULTS[run_id] = {
         "status": "running",
-        "target_config": req.target_config,
+        "target_config": config_key,
         "target_config_label": config_label,
         "persona_keys": req.persona_keys,
         "num_turns": req.num_turns,
@@ -58,10 +84,16 @@ async def run_eval(req: RunEvalRequest):
         RESULTS.pop(old_id, None)
 
     async def _execute():
+        from custom_agent import call_custom_target
+
         scored = []
         for pk in req.persona_keys:
             try:
-                convo = await run_persona_conversation(pk, req.target_config, req.num_turns)
+                if use_custom:
+                    # Patch the simulator to use custom agent
+                    convo = await run_persona_conversation(pk, "__custom__", req.num_turns)
+                else:
+                    convo = await run_persona_conversation(pk, req.target_config, req.num_turns)
                 verdict = await judge_transcript(convo["persona_name"], convo["transcript"])
                 scored.append({**convo, "verdict": verdict})
             except Exception as e:
@@ -83,8 +115,14 @@ async def run_eval(req: RunEvalRequest):
         RESULTS[run_id]["status"] = "done"
         RESULTS[run_id]["results"] = scored
 
+    # If custom, inject the custom_target config into target_agent so
+    # the simulator's call_target_agent uses it
+    if use_custom:
+        from target_agent import _custom_target_config
+        _custom_target_config["config"] = req.custom_target
+
     asyncio.create_task(_execute())
-    return {"run_id": run_id, "status": "started", "target_config": req.target_config, "target_config_label": config_label}
+    return {"run_id": run_id, "status": "started", "target_config": config_key, "target_config_label": config_label}
 
 
 @app.get("/results/{run_id}")
