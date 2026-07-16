@@ -29,12 +29,14 @@ async def run_persona_conversation(
     persona_key: str,
     target_config: str = "weak",
     num_turns: int = 5,
+    personas_dict: dict | None = None,
 ) -> dict:
     """
     Runs one persona through a multi-turn conversation with the target agent.
     Returns a transcript dict ready for the judge to score.
     """
-    persona = PERSONAS[persona_key]
+    personas = personas_dict or PERSONAS
+    persona = personas[persona_key]
 
     target_view: list[dict] = []       # what the target agent sees
     persona_view: list[dict] = []      # what the persona simulator sees

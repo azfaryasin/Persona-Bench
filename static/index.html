@@ -3,528 +3,1526 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Persona Bench — AI Chatbot Evaluator</title>
+<title>Persona-Bench — AI Agent Evaluation</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 24px 16px; background: #0f1115; color: #e6e6e6; }
-  h1 { font-size: 1.6rem; margin-bottom: 4px; }
-  .subtitle { color: #9aa0aa; font-size: 0.95rem; margin-bottom: 24px; }
+/* ── Reset & Base ─────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font-family:inherit;color:inherit}
 
-  /* Controls */
-  .controls { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 24px; }
-  .controls button { background: #e8533f; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 0.95rem; font-weight: 600; transition: opacity 0.2s; }
-  .controls button:disabled { opacity: 0.4; cursor: not-allowed; }
-  .controls button.weak-btn { background: #e8533f; }
-  .controls button.improved-btn { background: #22c55e; }
-  .controls button.custom-btn { background: #6366f1; }
-  .controls select { background: #1a1d24; color: #e6e6e6; border: 1px solid #2a2d34; padding: 10px 14px; border-radius: 8px; font-size: 0.9rem; }
+/* ── Scrollbar ───────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2)}
 
-  /* Status */
-  #status { margin-bottom: 16px; font-size: 0.9rem; color: #9aa0aa; min-height: 24px; }
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #9aa0aa; border-top-color: #e8533f; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
+/* ── Nav ─────────────────────────────────────────────────── */
+.nav{position:sticky;top:0;z-index:50;background:rgba(15,23,42,0.8);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.1)}
+.nav-inner{max-width:1280px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px}
+.nav-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:0.95rem;color:#f8fafc;cursor:pointer}
+.nav-logo:hover{opacity:0.85}
+.nav-links{display:flex;align-items:center;gap:24px}
+.nav-link{font-size:0.875rem;font-weight:500;color:#94a3b8;transition:color 0.2s;cursor:pointer;background:none;border:none;padding:0}
+.nav-link:hover{color:#e2e8f0}
+.nav-link.active{color:#818cf8}
+.nav-right{display:flex;align-items:center;gap:12px}
+.demo-badge{font-size:10px;padding:3px 10px;border-radius:9999px;background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25);font-weight:500}
+.mobile-toggle{display:none;background:none;border:none;color:#94a3b8;padding:4px;cursor:pointer}
+.mobile-toggle:hover{color:#e2e8f0}
 
-  /* Comparison layout */
-  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-  .comparison.triple { grid-template-columns: 1fr 1fr 1fr; }
-  @media (max-width: 768px) { .comparison { grid-template-columns: 1fr; } .comparison.triple { grid-template-columns: 1fr; } }
+/* ── Mobile nav dropdown ─────────────────────────────────── */
+.mobile-nav{display:none;border-top:1px solid rgba(255,255,255,0.1);background:rgba(15,23,42,0.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.mobile-nav.open{display:block}
+.mobile-nav-link{display:block;width:100%;text-align:left;padding:10px 16px;font-size:0.875rem;font-weight:500;border-radius:8px;cursor:pointer;background:none;border:none;transition:all 0.15s;color:#94a3b8}
+.mobile-nav-link:hover{background:rgba(255,255,255,0.05);color:#e2e8f0}
+.mobile-nav-link.active{color:#818cf8;background:rgba(99,102,241,0.1)}
 
-  /* Config panel */
-  .config-panel { border: 1px solid #2a2d34; border-radius: 12px; background: #171a21; overflow: hidden; }
-  .config-panel.weak { border-top: 3px solid #e8533f; }
-  .config-panel.improved { border-top: 3px solid #22c55e; }
-  .config-panel.custom { border-top: 3px solid #6366f1; }
+/* ── Main content ────────────────────────────────────────── */
+main{flex:1}
 
-  .config-header { padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d34; }
-  .config-header h2 { font-size: 1.05rem; font-weight: 600; }
-  .config-header .tag { font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
-  .weak .tag { background: rgba(232,83,63,0.15); color: #e8533f; }
-  .improved .tag { background: rgba(34,197,94,0.15); color: #22c55e; }
-  .custom .tag { background: rgba(99,102,241,0.15); color: #6366f1; }
+/* ── Footer ──────────────────────────────────────────────── */
+.footer{border-top:1px solid rgba(255,255,255,0.1);padding:16px 0;text-align:center;font-size:0.75rem;color:#64748b;margin-top:auto}
 
-  /* Summary bar */
-  .summary-bar { display: flex; gap: 16px; padding: 14px 20px; border-bottom: 1px solid #2a2d34; flex-wrap: wrap; }
-  .summary-stat { display: flex; flex-direction: column; align-items: center; }
-  .summary-stat .num { font-size: 1.4rem; font-weight: 700; }
-  .summary-stat .label { font-size: 0.75rem; color: #9aa0aa; margin-top: 2px; }
-  .num-pass { color: #4ade80; }
-  .num-fail { color: #f87171; }
-  .num-halluc { color: #fbbf24; }
-  .num-error { color: #9aa0aa; }
+/* ── Animations ──────────────────────────────────────────── */
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes scaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(99,102,241,0.5)}70%{box-shadow:0 0 0 18px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes growWidth{from{width:0}to{width:var(--target-width)}}
+@keyframes ringDraw{from{stroke-dashoffset:var(--ring-circumference)}to{stroke-dashoffset:var(--ring-target)}}
+.anim-fade{animation:fadeIn 0.5s ease-out both}
+.anim-fade-s1{animation:fadeIn 0.5s ease-out 0.1s both}
+.anim-fade-s2{animation:fadeIn 0.5s ease-out 0.2s both}
+.anim-fade-s3{animation:fadeIn 0.5s ease-out 0.3s both}
+.anim-fade-s4{animation:fadeIn 0.5s ease-out 0.4s both}
+.anim-scale{animation:scaleIn 0.35s ease-out both}
 
-  /* Persona card */
-  .persona-card { padding: 14px 20px; border-bottom: 1px solid #1e2028; cursor: pointer; transition: background 0.15s; }
-  .persona-card:hover { background: #1e2028; }
-  .persona-card:last-child { border-bottom: none; }
-  .persona-card-header { display: flex; justify-content: space-between; align-items: center; }
-  .persona-card-header strong { font-size: 0.9rem; }
-  .verdict-badge { font-size: 0.75rem; padding: 2px 10px; border-radius: 999px; font-weight: 600; }
-  .verdict-badge.pass { background: rgba(74,222,128,0.15); color: #4ade80; }
-  .verdict-badge.fail { background: rgba(248,113,113,0.15); color: #f87171; }
-  .verdict-badge.error { background: rgba(156,163,175,0.15); color: #9aa0aa; }
-  .persona-card-meta { font-size: 0.8rem; color: #9aa0aa; margin-top: 6px; display: flex; gap: 12px; flex-wrap: wrap; }
-  .persona-card-notes { font-size: 0.82rem; color: #b0b5be; margin-top: 6px; line-height: 1.4; }
+/* ── Card hover ──────────────────────────────────────────── */
+.card-hover{transition:transform 0.2s,box-shadow 0.2s}
+.card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 30px -5px rgba(99,102,241,0.12),0 0 0 1px rgba(99,102,241,0.08)}
 
-  /* Transcript expand */
-  .transcript-toggle { font-size: 0.8rem; color: #6366f1; cursor: pointer; margin-top: 8px; user-select: none; }
-  .transcript-toggle:hover { text-decoration: underline; }
-  .transcript-content { display: none; margin-top: 10px; max-height: 300px; overflow-y: auto; background: #0f1115; border-radius: 8px; padding: 12px; font-size: 0.82rem; line-height: 1.6; }
-  .transcript-content.open { display: block; }
-  .transcript-content .turn { margin-bottom: 8px; }
-  .transcript-content .speaker { font-weight: 600; color: #9aa0aa; }
-  .transcript-content .speaker.agent-speak { color: #22c55e; }
-  .transcript-content .speaker.user-speak { color: #6366f1; }
+/* ── Glass panels ────────────────────────────────────────── */
+.glass{background:rgba(30,41,59,0.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:12px}
+.glass-strong{background:rgba(30,41,59,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.12);border-radius:12px}
 
-  /* Empty state */
-  .empty-state { text-align: center; padding: 60px 20px; color: #9aa0aa; }
-  .empty-state p { margin-bottom: 8px; }
-  .empty-state .hint { font-size: 0.85rem; }
+/* ── Badges ──────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:9999px;border:1px solid;white-space:nowrap}
+.badge-indigo{background:rgba(99,102,241,0.15);color:#818cf8;border-color:rgba(99,102,241,0.25)}
+.badge-emerald{background:rgba(16,185,129,0.15);color:#34d399;border-color:rgba(16,185,129,0.25)}
+.badge-red{background:rgba(239,68,68,0.15);color:#f87171;border-color:rgba(239,68,68,0.25)}
+.badge-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border-color:rgba(245,158,11,0.25)}
+.badge-violet{background:rgba(139,92,246,0.15);color:#a78bfa;border-color:rgba(139,92,246,0.25)}
+.badge-slate{background:rgba(100,116,139,0.15);color:#94a3b8;border-color:rgba(100,116,139,0.25)}
+.badge-orange{background:rgba(251,146,60,0.15);color:#fb923c;border-color:rgba(251,146,60,0.25)}
+.badge-cyan{background:rgba(6,182,212,0.15);color:#22d3ee;border-color:rgba(6,182,212,0.25)}
 
-  /* Instruction banner */
-  .instruction-banner { background: #1a1d24; border: 1px solid #2a2d34; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; }
-  .instruction-banner h3 { font-size: 0.9rem; margin-bottom: 6px; color: #e6e6e6; }
-  .instruction-banner p { font-size: 0.85rem; color: #9aa0aa; line-height: 1.5; }
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:0.875rem;font-weight:600;transition:all 0.15s;border:none;cursor:pointer;line-height:1.4}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.btn-primary{background:#4f46e5;color:#fff}
+.btn-primary:hover:not(:disabled){background:#4338ca}
+.btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.15);color:#cbd5e1}
+.btn-outline:hover:not(:disabled){background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.25)}
+.btn-ghost{background:transparent;color:#94a3b8;padding:8px}
+.btn-ghost:hover{background:rgba(255,255,255,0.1);color:#e2e8f0}
+.btn-lg{padding:14px 32px;font-size:0.95rem;border-radius:8px}
+.btn-sm{padding:6px 14px;font-size:0.8rem}
 
-  /* BYO Agent collapsible section */
-  .byo-section { margin-bottom: 24px; border: 1px solid #2a2d34; border-radius: 12px; background: #171a21; overflow: hidden; }
-  .byo-toggle { width: 100%; background: none; border: none; color: #e6e6e6; padding: 14px 20px; text-align: left; cursor: pointer; font-size: 0.95rem; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
-  .byo-toggle:hover { background: #1e2028; }
-  .byo-toggle .arrow { transition: transform 0.2s; font-size: 0.8rem; color: #9aa0aa; }
-  .byo-toggle .arrow.open { transform: rotate(90deg); }
-  .byo-body { display: none; padding: 0 20px 20px; }
-  .byo-body.open { display: block; }
-  .byo-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-  @media (max-width: 500px) { .byo-row { grid-template-columns: 1fr; } }
-  .byo-field { margin-bottom: 14px; }
-  .byo-field label { display: block; font-size: 0.82rem; color: #9aa0aa; margin-bottom: 4px; font-weight: 500; }
-  .byo-field input, .byo-field textarea, .byo-field select { width: 100%; background: #0f1115; color: #e6e6e6; border: 1px solid #2a2d34; border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; font-family: 'SF Mono', 'Fira Code', monospace; }
-  .byo-field input::placeholder, .byo-field textarea::placeholder { color: #555; }
-  .byo-field textarea { min-height: 60px; resize: vertical; }
-  .byo-hint { font-size: 0.78rem; color: #666; margin-top: 4px; line-height: 1.4; }
-  .byo-hint code { background: #0f1115; padding: 1px 5px; border-radius: 3px; font-size: 0.78rem; color: #fbbf24; }
-  .byo-actions { display: flex; gap: 12px; align-items: center; margin-top: 16px; }
-  .byo-advanced { display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2a2d34; }
-  .byo-advanced.open { display: block; }
-  .byo-advanced-toggle { font-size: 0.8rem; color: #6366f1; cursor: pointer; margin-top: 12px; user-select: none; }
-  .byo-advanced-toggle:hover { text-decoration: underline; }
+/* ── Form elements ───────────────────────────────────────── */
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:0.875rem;color:#cbd5e1;font-weight:500}
+.form-label-hint{font-weight:400;color:#475569}
+.form-input{background:rgba(15,23,42,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;font-size:0.875rem;color:#f8fafc;outline:none;transition:border-color 0.15s}
+.form-input:focus{border-color:rgba(99,102,241,0.5)}
+.form-input::placeholder{color:#475569}
+.form-input:disabled{opacity:0.5;cursor:not-allowed}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 5.646a.5.5 0 0 1 .708 0L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
+.textarea{min-height:80px;resize:vertical;font-family:'SF Mono',Monaco,'Cascadia Mono',monospace;font-size:0.8rem}
+.input-with-icon{position:relative}
+.input-with-icon .icon-left{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+.input-with-icon .form-input{padding-left:38px}
+.input-error{font-size:0.8rem;color:#f87171}
 
-  /* Footer */
-  footer { margin-top: 48px; padding: 16px 0; border-top: 1px solid #2a2d34; text-align: center; font-size: 0.8rem; color: #555; }
+/* ── Progress bar ────────────────────────────────────────── */
+.progress-track{height:8px;width:100%;border-radius:9999px;background:rgba(255,255,255,0.05);overflow:hidden}
+.progress-fill{height:100%;border-radius:9999px;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
+
+/* ── Circular progress ring ──────────────────────────────── */
+.ring-track{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:10}
+.ring-progress{fill:none;stroke-width:10;stroke-linecap:round;animation:ringDraw 1.5s cubic-bezier(0.4,0,0.2,1) both;transform:rotate(-90deg);transform-origin:center}
+
+/* ── Accordion ───────────────────────────────────────────── */
+.accordion-item{border-bottom:1px solid rgba(255,255,255,0.05)}
+.accordion-trigger{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 16px;font-size:0.875rem;font-weight:500;color:#f8fafc;cursor:pointer;background:none;border:none;text-align:left;transition:background 0.15s}
+.accordion-trigger:hover{background:rgba(255,255,255,0.03)}
+.accordion-trigger .chevron{transition:transform 0.2s;color:#64748b;flex-shrink:0}
+.accordion-trigger[aria-expanded="true"] .chevron{transform:rotate(180deg)}
+.accordion-content{overflow:hidden;max-height:0;transition:max-height 0.3s ease-out}
+.accordion-content.open{max-height:3000px}
+.accordion-body{padding:0 16px 16px}
+
+/* ── Chat bubbles ────────────────────────────────────────── */
+.chat-msg{display:flex;margin-bottom:12px}
+.chat-msg.user{justify-content:flex-start}
+.chat-msg.agent{justify-content:flex-end}
+.chat-msg-inner{display:flex;align-items:flex-start;gap:8px;max-width:80%}
+.chat-msg.user .chat-msg-inner{flex-direction:row}
+.chat-msg.agent .chat-msg-inner{flex-direction:row-reverse}
+.chat-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chat-avatar.user-av{background:#475569}
+.chat-avatar.agent-av{background:rgba(99,102,241,0.3)}
+.chat-bubble{border-radius:16px;padding:12px;font-size:0.875rem;color:#e2e8f0;line-height:1.5}
+.chat-msg.user .chat-bubble{background:#334155;border-bottom-left-radius:4px}
+.chat-msg.agent .chat-bubble{background:rgba(49,46,129,0.3);border-bottom-right-radius:4px}
+.chat-bubble.pass-border{border-left:2px solid #10b981}
+.chat-bubble.fail-border{border-left:2px solid #ef4444}
+.chat-bubble.error-border{border-left:2px solid #f59e0b}
+
+/* ── Modal / Dialog ──────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal-box{background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;width:100%;max-width:672px;max-height:80vh;overflow-y:auto;padding:24px;transform:scale(0.95);transition:transform 0.2s}
+.modal-overlay.open .modal-box{transform:scale(1)}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media(max-width:768px){
+  .nav-links{display:none}
+  .mobile-toggle{display:block}
+  .hero-title{font-size:2rem!important}
+  .hero-btns{flex-direction:column}
+  .hero-btns .btn{width:100%}
+  .how-grid{grid-template-columns:1fr!important}
+  .judge-grid{grid-template-columns:1fr!important}
+  .radar-grid{grid-template-columns:1fr!important}
+  .report-grid-2{grid-template-columns:1fr!important}
+  .stat-grid{grid-template-columns:1fr 1fr!important}
+}
+@media(min-width:769px){
+  .mobile-nav{display:none!important}
+}
+
+/* ── Print ───────────────────────────────────────────────── */
+@media print{.no-print{display:none!important}.footer{display:none}.nav{position:static;background:#fff;color:#000}.nav *{color:#000}body{background:#fff;color:#000}}
+
+/* ── Utility ─────────────────────────────────────────────── */
+.text-center{text-align:center}
+.text-left{text-align:left}
+.font-mono{font-family:'SF Mono',Monaco,'Cascadia Mono',monospace}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 </style>
 </head>
 <body>
-  <h1>🧪 Persona Bench</h1>
-  <p class="subtitle">Catch AI chatbot failures before your users do — test with simulated adversarial personas.</p>
 
-  <div class="instruction-banner">
-    <h3>How to demo</h3>
-    <p>
-      1. Click <strong>"Run Weak Bot"</strong> — this is a support bot that guesses when unsure (bad practice).<br>
-      2. Click <strong>"Run Improved Bot"</strong> — this bot admits uncertainty and escalates.<br>
-      3. The side-by-side comparison shows the improvement at a glance. Expand any card to read the full transcript.
-    </p>
+<!-- ═══════════════ NAVIGATION ═══════════════ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo" onclick="navigate('home')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"/><path d="M16 14h.01"/><path d="M8 14h.01"/><path d="M12 18v4"/><path d="M8 22h8"/><path d="M5 12a7 7 0 0 0 14 0"/></svg>
+      <span>Persona-Bench</span>
+    </div>
+    <div class="nav-links">
+      <button class="nav-link" data-nav="home" onclick="navigate('home')">Evaluate</button>
+      <button class="nav-link" data-nav="leaderboard" onclick="navigate('leaderboard')">Leaderboard</button>
+    </div>
+    <div class="nav-right">
+      <span class="demo-badge">Demo Mode</span>
+      <button class="mobile-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
+        <svg id="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+        <svg id="close-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   </div>
-
-  <div class="controls">
-    <button id="runWeakBtn" class="weak-btn">Run Weak Bot</button>
-    <button id="runImprovedBtn" class="improved-btn">Run Improved Bot</button>
-    <select id="personaSelect">
-      <option value="all">All Personas</option>
-      <option value="adversarial" selected>Adversarial Tester (recommended)</option>
-    </select>
+</nav>
+<div id="mobile-nav" class="mobile-nav">
+  <div style="padding:12px 16px">
+    <button class="mobile-nav-link" data-nav="home" onclick="navigate('home');closeMobileNav()">Evaluate</button>
+    <button class="mobile-nav-link" data-nav="leaderboard" onclick="navigate('leaderboard');closeMobileNav()">Leaderboard</button>
   </div>
+</div>
 
-  <!-- BYO Agent Section -->
-  <div class="byo-section">
-    <button class="byo-toggle" id="byoToggle">
-      <span>🔌 Test Your Own Agent</span>
-      <span class="arrow" id="byoArrow">▸</span>
-    </button>
-    <div class="byo-body" id="byoBody">
-      <p style="font-size:0.82rem; color:#9aa0aa; margin-bottom:14px; line-height:1.5;">
-        Point Persona Bench at any HTTP chatbot API. Pick a format, paste your URL, and go.
+<!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+<main>
+  <!-- HOME VIEW -->
+  <div id="view-home" class="view">
+    <!-- Hero -->
+    <section style="max-width:768px;margin:0 auto;padding:64px 16px 40px;text-align:center" class="anim-fade">
+      <h1 class="hero-title" style="font-size:3.25rem;font-weight:800;color:#f8fafc;letter-spacing:-0.025em;line-height:1.1">
+        Is Your AI Agent Ready for Real Humans?
+      </h1>
+      <p style="font-size:1.125rem;color:#94a3b8;margin-top:16px;line-height:1.6" class="anim-fade-s1">
+        Evaluate your chatbot against realistic personas with multi-judge scoring.
       </p>
-
-      <div class="byo-row">
-        <div class="byo-field" style="margin-bottom:0;">
-          <label>Endpoint URL <span style="color:#f87171">*</span></label>
-          <input type="text" id="byoUrl" placeholder="https://api.your-service.com/v1/chat" style="font-family:inherit;" />
-        </div>
-        <div class="byo-field" style="margin-bottom:0;">
-          <label>API Key <span style="color:#666;">(optional)</span></label>
-          <input type="password" id="byoApiKey" placeholder="sk-..." style="font-family:inherit;" />
-        </div>
+      <div class="hero-btns" style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:32px;flex-wrap:wrap" class="anim-fade-s2">
+        <button class="btn btn-primary btn-lg" onclick="document.getElementById('eval-form').scrollIntoView({behavior:'smooth'})">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+          Test My Agent
+        </button>
+        <button class="btn btn-outline btn-lg" onclick="navigate('leaderboard')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
+          View Leaderboard
+        </button>
       </div>
+    </section>
 
-      <div class="byo-field">
-        <label>API Format</label>
-        <select id="byoFormat" style="font-family:inherit;">
-          <option value="openai">OpenAI-compatible (messages array)</option>
-          <option value="simple">Simple (single message string)</option>
-          <option value="custom">Custom — I'll define the request myself</option>
-        </select>
-        <div class="byo-hint" id="byoFormatHint">
-          Sends <code>{"messages": [...]}</code> and extracts <code>choices.0.message.content</code>. Works with OpenAI, Together, Groq, most hosted LLMs.
-        </div>
-      </div>
-
-      <!-- Advanced: shown only when format=custom -->
-      <div class="byo-advanced" id="byoAdvanced">
-        <div class="byo-field">
-          <label>Request Body Template <span style="color:#f87171">*</span></label>
-          <textarea id="byoBodyTemplate" rows="3" placeholder='{"message": "{{message}}"}'></textarea>
-          <div class="byo-hint">
-            <code>{{message}}</code> = latest user message (string). <code>{{history}}</code> = full conversation as JSON array (must be <strong>outside</strong> quotes).
+    <!-- Evaluation Form -->
+    <section style="max-width:672px;margin:0 auto;padding:0 16px 64px" class="anim-fade-s3">
+      <div id="eval-form" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:32px;box-shadow:0 8px 30px -5px rgba(99,102,241,0.1)">
+        <h2 style="font-size:1.25rem;font-weight:600;color:#f8fafc;margin-bottom:24px">Configure Your Agent Test</h2>
+        <form id="eval-form-el" style="display:flex;flex-direction:column;gap:20px">
+          <!-- Endpoint URL -->
+          <div class="form-group">
+            <label class="form-label" for="endpoint-url">Endpoint URL</label>
+            <div class="input-with-icon">
+              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              <input class="form-input" type="url" id="endpoint-url" placeholder="https://api.example.com/chat" required />
+            </div>
+            <span id="url-error" class="input-error" style="display:none"></span>
           </div>
-        </div>
-        <div class="byo-field">
-          <label>Response Path <span style="color:#f87171">*</span></label>
-          <input type="text" id="byoResponsePath" placeholder="reply" />
-          <div class="byo-hint">
-            Dot-notation path to the reply text. E.g. <code>reply</code>, <code>choices.0.message.content</code>
+
+          <!-- API Key -->
+          <div class="form-group">
+            <label class="form-label" for="api-key">API Key <span class="form-label-hint">(optional)</span></label>
+            <div class="input-with-icon">
+              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input class="form-input" type="password" id="api-key" placeholder="sk-..." />
+            </div>
           </div>
+
+          <!-- Industry / Niche -->
+          <div class="form-group">
+            <label class="form-label" for="niche-select">Industry / Niche</label>
+            <div class="input-with-icon">
+              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4v2a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4z"/></svg>
+              <select class="form-input form-select" id="niche-select">
+                <option value="">Loading niches...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Persona -->
+          <div class="form-group">
+            <label class="form-label" for="persona-select">Persona</label>
+            <select class="form-input form-select" id="persona-select">
+              <option value="__all__">All Personas</option>
+            </select>
+          </div>
+
+          <!-- API Format -->
+          <div class="form-group">
+            <label class="form-label" for="api-format">API Format</label>
+            <select class="form-input form-select" id="api-format" onchange="onFormatChange()">
+              <option value="openai">OpenAI-compatible</option>
+              <option value="simple">Simple</option>
+              <option value="custom">Custom</option>
+            </select>
+          </div>
+
+          <!-- Request Body Template -->
+          <div class="form-group">
+            <label class="form-label" for="body-template">Request Body Template</label>
+            <textarea class="form-input textarea" id="body-template" disabled placeholder='{"messages": {{history}}}'></textarea>
+          </div>
+
+          <!-- Response Path -->
+          <div class="form-group">
+            <label class="form-label" for="response-path">Response Path</label>
+            <input class="form-input font-mono" id="response-path" disabled placeholder="choices.0.message.content" style="font-size:0.8rem" />
+          </div>
+
+          <!-- Advanced Options -->
+          <div>
+            <button type="button" class="flex items-center gap-2 text-sm" style="color:#94a3b8;padding:4px 0" onclick="toggleAdvanced()">
+              <svg id="adv-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><path d="m6 9 6 6 6-6"/></svg>
+              Advanced Options
+            </button>
+            <div id="advanced-section" style="display:none;padding-top:12px">
+              <div class="form-group">
+                <label class="form-label" for="extra-headers">Extra Headers</label>
+                <textarea class="form-input textarea" id="extra-headers" placeholder='{"X-Custom-Header": "value"}' style="min-height:60px"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ensemble Toggle -->
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(15,23,42,0.3);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:16px">
+            <div>
+              <label class="form-label" for="ensemble-toggle" style="cursor:pointer">Multi-Judge Ensemble</label>
+              <p style="font-size:0.75rem;color:#64748b;margin-top:2px">(Safety, Persona, Business, Quality)</p>
+            </div>
+            <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
+              <input type="checkbox" id="ensemble-toggle" checked style="opacity:0;width:0;height:0" />
+              <span id="switch-track" style="position:absolute;inset:0;background:#6366f1;border-radius:9999px;transition:background 0.2s"></span>
+              <span id="switch-thumb" style="position:absolute;top:2px;left:22px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left 0.2s"></span>
+            </label>
+          </div>
+
+          <!-- Submit -->
+          <button type="submit" class="btn btn-primary" id="launch-btn" disabled style="padding:14px 32px;font-size:0.95rem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+            Launch Evaluation
+          </button>
+
+          <p style="font-size:0.75rem;color:#64748b;text-align:center;margin-top:4px">
+            Takes ~30 seconds &bull; Multi-judge ensemble &bull; Niche-specific scenarios
+          </p>
+        </form>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section style="max-width:896px;margin:0 auto;padding:0 16px 64px">
+      <h2 style="font-size:1.5rem;font-weight:700;color:#f8fafc;text-align:center;margin-bottom:48px">How It Works</h2>
+      <div class="how-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
+        <div class="card-hover" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center">
+          <div style="width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v6l3 7H6l3-7V3Z"/><path d="M6 16h12"/><path d="M8 19h8"/></svg>
+          </div>
+          <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc;margin-bottom:8px">Pick Your Niche</h3>
+          <p style="font-size:0.875rem;color:#94a3b8;line-height:1.5">Choose from 10 industries. Each niche has tailored personas and evaluation criteria.</p>
         </div>
-        <div class="byo-field">
-          <label>Extra Headers (JSON)</label>
-          <textarea id="byoHeaders" rows="2" placeholder='{"X-Custom": "value"}'></textarea>
+        <div class="card-hover" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center">
+          <div style="width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc;margin-bottom:8px">Face the Personas</h3>
+          <p style="font-size:0.875rem;color:#94a3b8;line-height:1.5">Your agent is tested against adversarial personas that push boundaries.</p>
+        </div>
+        <div class="card-hover" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center">
+          <div style="width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+          </div>
+          <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc;margin-bottom:8px">Get Your Report</h3>
+          <p style="font-size:0.875rem;color:#94a3b8;line-height:1.5">Receive a detailed multi-judge analysis with actionable improvements.</p>
         </div>
       </div>
+    </section>
+  </div>
 
-      <div class="byo-actions">
-        <button id="runCustomBtn" class="custom-btn">Run Against My Agent</button>
-        <span id="byoError" style="color:#f87171; font-size:0.85rem;"></span>
+  <!-- LOADING VIEW -->
+  <div id="view-loading" class="view" style="display:none">
+    <div style="position:fixed;inset:0;z-index:50;background:rgba(15,23,42,0.9);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">
+      <div style="max-width:448px;width:100%;margin:0 16px;text-align:center" class="anim-scale">
+        <div style="display:flex;justify-content:center">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:pulseRing 1.5s infinite"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"/><path d="M16 14h.01"/><path d="M8 14h.01"/><path d="M12 18v4"/><path d="M8 22h8"/><path d="M5 12a7 7 0 0 0 14 0"/></svg>
+        </div>
+        <h2 style="font-size:1.5rem;font-weight:700;color:#f8fafc;margin-top:24px">Evaluating Your Agent</h2>
+        <div style="display:flex;justify-content:center;margin-top:12px">
+          <span class="badge badge-indigo" id="loading-niche-badge">Niche</span>
+        </div>
+        <div style="margin-top:32px;text-align:left;display:flex;flex-direction:column;gap:16px" id="loading-steps"></div>
+        <button class="btn btn-outline" style="margin-top:32px" onclick="cancelLoading()">Cancel</button>
       </div>
     </div>
   </div>
 
-  <div id="status"></div>
-  <div id="results"></div>
+  <!-- REPORT VIEW -->
+  <div id="view-report" class="view" style="display:none">
+    <div style="max-width:1152px;margin:0 auto;padding:0 16px 64px">
+      <!-- Top bar -->
+      <section class="anim-fade" style="padding:24px 0 16px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="navigate('home')" style="padding:8px;flex-shrink:0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          </button>
+          <div style="display:flex;align-items:center;gap:6px;font-size:0.875rem">
+            <a href="#" onclick="navigate('home');return false" style="color:#818cf8">Home</a>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            <span style="color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="report-breadcrumb">Report</span>
+          </div>
+          <div style="flex:1"></div>
+          <span class="badge badge-indigo" id="report-niche-badge" style="font-size:0.8rem;padding:4px 12px;border-radius:8px">Niche</span>
+          <span class="badge badge-violet" id="report-ensemble-badge" style="display:none;font-size:0.75rem;padding:3px 10px;border-radius:6px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+            Multi-Judge Ensemble
+          </span>
+        </div>
+      </section>
 
-  <footer>Persona Bench — OpenAI Codex Hackathon 2025</footer>
+      <!-- Score Hero -->
+      <section class="anim-fade-s1" style="padding:32px 0">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
+            <svg id="score-ring" width="220" height="220" viewBox="0 0 220 220"></svg>
+            <div style="position:absolute;display:flex;align-items:center;justify-content:center">
+              <span id="score-display" style="font-size:3.75rem;font-weight:700;color:#f8fafc;font-variant-numeric:tabular-nums">0.0<span style="font-size:0.875rem;font-weight:400;color:#64748b">/10</span></span>
+            </div>
+          </div>
+          <span class="badge" id="risk-badge">RISK</span>
+          <div id="deploy-banner" style="width:100%;max-width:32rem;background:#1e293b;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;margin-top:16px;border-left:4px solid">
+            <span id="deploy-icon"></span>
+            <span style="font-size:0.875rem;font-weight:500;color:#e2e8f0" id="deploy-text"></span>
+          </div>
+        </div>
+      </section>
 
+      <!-- Multi-Judge Ensemble -->
+      <section id="ensemble-section" class="anim-fade-s2" style="display:none;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Multi-Judge Analysis</h2>
+        </div>
+        <div class="judge-grid" id="judge-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"></div>
+        <div id="ensemble-verdict" class="glass-strong card-hover" style="padding:24px;margin-top:8px;display:none"></div>
+      </section>
+
+      <!-- Radar Chart Section -->
+      <section id="radar-section" class="anim-fade-s3" style="display:none;margin-top:32px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Dimension Analysis</h2>
+        </div>
+        <div class="radar-grid" id="radar-charts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px"></div>
+      </section>
+
+      <!-- Stats Summary -->
+      <section class="anim-fade-s3" style="margin-top:32px">
+        <div class="stat-grid" id="stat-cards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px"></div>
+      </section>
+
+      <!-- Executive Summary -->
+      <section id="exec-summary-section" class="anim-fade-s3" style="display:none;margin-top:32px">
+        <div class="glass card-hover" style="padding:24px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+            <h2 style="font-size:1.125rem;font-weight:700;color:#f8fafc">Executive Summary</h2>
+          </div>
+          <p id="exec-summary-text" style="font-size:0.875rem;color:#cbd5e1;line-height:1.7"></p>
+        </div>
+      </section>
+
+      <!-- Key Strengths + Critical Gaps -->
+      <section id="strengths-gaps-section" class="anim-fade-s4" style="display:none;margin-top:32px">
+        <div class="report-grid-2" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+          <div id="strengths-card" class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05);border-top:2px solid #10b981;display:none">
+            <h3 style="font-size:0.875rem;font-weight:700;color:#34d399;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+              Key Strengths
+            </h3>
+            <div id="strengths-list" style="display:flex;flex-direction:column;gap:12px"></div>
+          </div>
+          <div id="gaps-card" class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(239,68,68,0.2);border-top:2px solid #ef4444;display:none">
+            <h3 style="font-size:0.875rem;font-weight:700;color:#f87171;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              Critical Gaps
+            </h3>
+            <div id="gaps-list" style="display:flex;flex-direction:column;gap:12px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Conversation Viewer -->
+      <section id="conversations-section" class="anim-fade-s4" style="display:none;margin-top:32px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Conversation Transcripts</h2>
+        </div>
+        <div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:16px;max-height:600px;overflow-y:auto">
+          <div id="conversations-list"></div>
+        </div>
+      </section>
+
+      <!-- Critical Flaws -->
+      <section id="flaws-section" class="anim-fade-s5" style="display:none;margin-top:32px">
+        <div style="border-left:4px solid #ef4444;background:rgba(239,68,68,0.05);border-radius:0 12px 12px 0;padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <h2 style="font-size:1.125rem;font-weight:700;color:#f87171">Critical Flaws Detected</h2>
+          </div>
+          <div id="flaws-list" style="display:flex;flex-direction:column;gap:16px"></div>
+        </div>
+      </section>
+
+      <!-- Action Items -->
+      <section id="actions-section" class="anim-fade-s5" style="display:none;margin-top:32px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Action Items</h2>
+        </div>
+        <div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:20px;display:flex;flex-direction:column;gap:16px">
+          <div id="actions-list"></div>
+        </div>
+      </section>
+
+      <!-- Risk Assessment -->
+      <section id="risks-section" class="anim-fade-s5" style="display:none;margin-top:32px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Risk Assessment</h2>
+        </div>
+        <div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:20px">
+          <div id="risks-list" style="display:flex;flex-direction:column;gap:12px"></div>
+        </div>
+      </section>
+
+      <!-- Prompt Optimizer -->
+      <section class="anim-fade-s6 no-print" style="margin-top:32px">
+        <button class="btn btn-primary btn-lg" id="optimize-btn" onclick="handleOptimizePrompt()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
+          Generate Improved System Prompt
+        </button>
+      </section>
+
+      <!-- Share Section -->
+      <section class="anim-fade-s6 no-print" style="margin-top:32px">
+        <div class="card-hover" style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:20px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            <h2 style="font-size:1.125rem;font-weight:700;color:#f8fafc">Share Report</h2>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <input class="form-input font-mono" id="share-url" readonly style="flex:1;min-width:200px;font-size:0.8rem" />
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" id="copy-url-btn" onclick="copyShareUrl()">
+                <svg id="copy-url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <span id="copy-url-text">Copy</span>
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="window.print()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ERROR VIEW -->
+  <div id="view-error" class="view" style="display:none">
+    <div class="anim-fade" style="max-width:448px;margin:80px auto 0;padding:0 16px">
+      <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:32px;text-align:center">
+        <div style="display:flex;justify-content:center">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <h2 style="font-size:1.25rem;font-weight:600;color:#f8fafc;margin-top:16px">Something went wrong.</h2>
+        <p id="error-message" style="color:#94a3b8;font-size:0.875rem;margin-top:8px"></p>
+        <button class="btn btn-outline" style="margin-top:24px;border-color:rgba(99,102,241,0.3);color:#818cf8" onclick="navigate('home')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Go Back Home
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD VIEW -->
+  <div id="view-leaderboard" class="view" style="display:none">
+    <div class="anim-fade" style="max-width:896px;margin:0 auto;padding:64px 16px;text-align:center">
+      <div style="width:64px;height:64px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:2rem">&#127942;</div>
+      <h2 style="font-size:1.875rem;font-weight:700;color:#f8fafc;margin-bottom:12px">Leaderboard</h2>
+      <p style="color:#94a3b8;margin-bottom:32px">Compare agent performance across industries. Coming soon &mdash; run an evaluation to see your scores here.</p>
+      <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:48px">
+        <p style="color:#64748b;font-size:0.875rem">No evaluations recorded yet.</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- ═══════════════ PROMPT MODAL ═══════════════ -->
+<div id="prompt-modal" class="modal-overlay">
+  <div class="modal-box">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
+      <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc">Optimized System Prompt</h3>
+    </div>
+    <p style="font-size:0.875rem;color:#94a3b8;margin-bottom:16px">An improved prompt based on evaluation findings. Review and copy to use in your agent configuration.</p>
+    <div id="prompt-content" style="background:#0f172a;border-radius:8px;padding:16px;font-family:'SF Mono',Monaco,monospace;font-size:0.875rem;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow-y:auto;line-height:1.6"></div>
+    <div style="display:flex;justify-content:flex-end;margin-top:16px">
+      <button class="btn btn-outline btn-sm" id="copy-prompt-btn" onclick="copyOptimizedPrompt()">
+        <svg id="copy-prompt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        <span id="copy-prompt-text">Copy to Clipboard</span>
+      </button>
+    </div>
+    <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px" onclick="closePromptModal()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════ FOOTER ═══════════════ -->
+<footer class="footer no-print">Persona-Bench &mdash; OpenAI Codex Hackathon 2026</footer>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════ -->
 <script>
-const statusEl = document.getElementById('status');
-const resultsEl = document.getElementById('results');
-const runWeakBtn = document.getElementById('runWeakBtn');
-const runImprovedBtn = document.getElementById('runImprovedBtn');
-const runCustomBtn = document.getElementById('runCustomBtn');
-const personaSelect = document.getElementById('personaSelect');
-const byoToggle = document.getElementById('byoToggle');
-const byoBody = document.getElementById('byoBody');
-const byoArrow = document.getElementById('byoArrow');
-const byoError = document.getElementById('byoError');
-const byoFormat = document.getElementById('byoFormat');
-const byoAdvanced = document.getElementById('byoAdvanced');
-const byoFormatHint = document.getElementById('byoFormatHint');
+// ─── State ──────────────────────────────────────────────────
+let currentView = 'home';
+let niches = {};
+let personas = {};
+let selectedNiche = 'general';
+let selectedPersona = '__all__';
+let runId = null;
+let runData = null;
+let report = null;
+let loadingStep = 0;
+let pollInterval = null;
+let optimizing = false;
+let optimizedPrompt = '';
 
-// State: store latest run_id per config
-const runs = { weak: null, improved: null, custom: null };
-let running = false;
-
-// Format presets: body_template and response_path for each format
 const FORMAT_PRESETS = {
-  openai: {
-    body_template: '{"messages": {{history}}}',
-    response_path: 'choices.0.message.content',
-    hint: 'Sends <code>{"messages": [...]}</code> and extracts <code>choices.0.message.content</code>. Works with OpenAI, Together, Groq, most hosted LLMs.'
-  },
-  simple: {
-    body_template: '{"message": "{{message}}"}',
-    response_path: 'reply',
-    hint: 'Sends <code>{"message": "..."}</code> and extracts the <code>reply</code> field. For simple chatbot endpoints.'
-  },
+  openai: { body_template: '{"messages": {{history}}}', response_path: 'choices.0.message.content' },
+  simple: { body_template: '{"message": "{{message}}"}', response_path: 'reply' },
 };
 
-// BYO collapsible toggle
-byoToggle.addEventListener('click', () => {
-  byoBody.classList.toggle('open');
-  byoArrow.classList.toggle('open');
-});
+// ─── Navigation ─────────────────────────────────────────────
+function navigate(view) {
+  // Hide all views
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  const el = document.getElementById('view-' + view);
+  if (el) el.style.display = '';
+  currentView = view;
 
-// Format dropdown: show/hide advanced section
-byoFormat.addEventListener('change', () => {
-  const fmt = byoFormat.value;
-  if (fmt === 'custom') {
-    byoAdvanced.classList.add('open');
-    byoFormatHint.style.display = 'none';
+  // Update nav active state
+  document.querySelectorAll('[data-nav]').forEach(a => {
+    a.classList.toggle('active', a.dataset.nav === view);
+  });
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+
+  // Re-trigger animations
+  if (el) {
+    el.querySelectorAll('.anim-fade,.anim-fade-s1,.anim-fade-s2,.anim-fade-s3,.anim-fade-s4,.anim-fade-s5,.anim-fade-s6,.anim-scale').forEach(e => {
+      e.style.animation = 'none';
+      e.offsetHeight; // reflow
+      e.style.animation = '';
+    });
+  }
+}
+
+// ─── Mobile nav ─────────────────────────────────────────────
+function toggleMobileNav() {
+  const nav = document.getElementById('mobile-nav');
+  const open = nav.classList.toggle('open');
+  document.getElementById('menu-icon').style.display = open ? 'none' : '';
+  document.getElementById('close-icon').style.display = open ? '' : 'none';
+}
+function closeMobileNav() {
+  document.getElementById('mobile-nav').classList.remove('open');
+  document.getElementById('menu-icon').style.display = '';
+  document.getElementById('close-icon').style.display = 'none';
+}
+
+// ─── Toggle switch ──────────────────────────────────────────
+document.getElementById('ensemble-toggle').addEventListener('change', function() {
+  const track = document.getElementById('switch-track');
+  const thumb = document.getElementById('switch-thumb');
+  if (this.checked) {
+    track.style.background = '#6366f1';
+    thumb.style.left = '22px';
   } else {
-    byoAdvanced.classList.remove('open');
-    byoFormatHint.style.display = 'block';
-    byoFormatHint.innerHTML = FORMAT_PRESETS[fmt].hint;
+    track.style.background = '#475569';
+    thumb.style.left = '2px';
   }
 });
 
-// Load persona list
-fetch('/personas').then(r => r.json()).then(personas => {
+// ─── Advanced toggle ────────────────────────────────────────
+function toggleAdvanced() {
+  const sec = document.getElementById('advanced-section');
+  const chev = document.getElementById('adv-chevron');
+  const open = sec.style.display === 'none';
+  sec.style.display = open ? '' : 'none';
+  chev.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+// ─── API format change ──────────────────────────────────────
+function onFormatChange() {
+  const fmt = document.getElementById('api-format').value;
+  const bodyT = document.getElementById('body-template');
+  const respP = document.getElementById('response-path');
+  const isCustom = fmt === 'custom';
+  bodyT.disabled = !isCustom;
+  respP.disabled = !isCustom;
+  if (!isCustom) {
+    const preset = FORMAT_PRESETS[fmt];
+    if (preset) {
+      bodyT.value = preset.body_template;
+      respP.value = preset.response_path;
+    }
+  }
+}
+
+// ─── Init: load niches ──────────────────────────────────────
+async function init() {
+  try {
+    const res = await fetch('/niches');
+    niches = await res.json();
+    populateNicheSelect();
+  } catch (e) {
+    console.error('Failed to load niches:', e);
+  }
+
+  // Set initial form values
+  document.getElementById('body-template').value = FORMAT_PRESETS.openai.body_template;
+  document.getElementById('response-path').value = FORMAT_PRESETS.openai.response_path;
+
+  // Enable launch button when URL is filled
+  const urlInput = document.getElementById('endpoint-url');
+  urlInput.addEventListener('input', () => {
+    document.getElementById('launch-btn').disabled = !urlInput.value.trim();
+  });
+
+  // Handle form submit
+  document.getElementById('eval-form-el').addEventListener('submit', handleLaunchEval);
+}
+
+function populateNicheSelect() {
+  const sel = document.getElementById('niche-select');
+  sel.innerHTML = '';
+  for (const [key, info] of Object.entries(niches)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = info.label + (info.has_builtin ? '' : ' (AI-generated)');
+    sel.appendChild(opt);
+  }
+  sel.value = selectedNiche;
+  sel.addEventListener('change', onNicheChange);
+  loadPersonas(selectedNiche);
+}
+
+async function onNicheChange() {
+  selectedNiche = document.getElementById('niche-select').value;
+  selectedPersona = '__all__';
+  await loadPersonas(selectedNiche);
+}
+
+async function loadPersonas(niche) {
+  try {
+    const res = await fetch('/personas?niche=' + encodeURIComponent(niche));
+    personas = await res.json();
+    populatePersonaSelect();
+  } catch (e) {
+    console.error('Failed to load personas:', e);
+  }
+}
+
+function populatePersonaSelect() {
+  const sel = document.getElementById('persona-select');
+  sel.innerHTML = '<option value="__all__">All Personas (' + Object.keys(personas).length + ')</option>';
   for (const [key, name] of Object.entries(personas)) {
-    // Skip if already added (adversarial is hardcoded as default)
-    if (personaSelect.querySelector(`option[value="${key}"]`)) continue;
     const opt = document.createElement('option');
     opt.value = key;
     opt.textContent = name;
-    personaSelect.appendChild(opt);
+    sel.appendChild(opt);
   }
-});
-
-function getPersonaKeys() {
-  const val = personaSelect.value;
-  return val === 'all' ? null : [val];
+  sel.value = selectedPersona;
 }
 
-function setRunning(isRunning) {
-  running = isRunning;
-  runWeakBtn.disabled = isRunning;
-  runImprovedBtn.disabled = isRunning;
-  runCustomBtn.disabled = isRunning;
-}
-
-async function startRun(config) {
-  if (running) return;
-  setRunning(true);
-  byoError.textContent = '';
-  statusEl.innerHTML = '<span class="spinner"></span> Running personas against <strong>' + config + '</strong> bot...';
-  resultsEl.innerHTML = '';
-
-  const body = { num_turns: 5, target_config: config };
-  const selectedPersonas = getPersonaKeys();
-  if (selectedPersonas) body.persona_keys = selectedPersonas;
-
-  try {
-    const startRes = await fetch('/run-eval', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const { run_id, error } = await startRes.json();
-    if (error) {
-      statusEl.textContent = 'Error: ' + error;
-      setRunning(false);
-      return;
-    }
-    runs[config] = run_id;
-    pollForResults(run_id, config);
-  } catch (e) {
-    statusEl.textContent = 'Failed to start evaluation: ' + e.message;
-    setRunning(false);
-  }
-}
-
-async function startCustomRun() {
-  if (running) return;
-  byoError.textContent = '';
-
-  const url = document.getElementById('byoUrl').value.trim();
-  const apiKey = document.getElementById('byoApiKey').value.trim();
-  const fmt = byoFormat.value;
-
-  // Validate URL
-  if (!url) { byoError.textContent = 'Endpoint URL is required.'; return; }
-  if (!url.startsWith('http://') && !url.startsWith('https://')) { byoError.textContent = 'URL must start with http:// or https://'; return; }
-
-  // Resolve body template and response path from preset or custom fields
-  let bodyTemplate, responsePath, extraHeaders = {};
-  if (fmt === 'custom') {
-    bodyTemplate = document.getElementById('byoBodyTemplate').value.trim();
-    responsePath = document.getElementById('byoResponsePath').value.trim();
-    const headersRaw = document.getElementById('byoHeaders').value.trim();
-    if (!bodyTemplate) { byoError.textContent = 'Request Body Template is required.'; return; }
-    if (!responsePath) { byoError.textContent = 'Response Path is required.'; return; }
-    if (headersRaw) {
-      try { extraHeaders = JSON.parse(headersRaw); }
-      catch { byoError.textContent = 'Extra Headers must be valid JSON.'; return; }
-    }
-    // Validate template renders to valid JSON
-    try {
-      const test = bodyTemplate.replace(/\{\{message\}\}/g, 'test').replace(/\{\{history\}\}/g, '[]');
-      JSON.parse(test);
-    } catch {
-      byoError.textContent = 'Body Template must be valid JSON (with {{message}}/{{history}} placeholders).';
-      return;
-    }
-  } else {
-    const preset = FORMAT_PRESETS[fmt];
-    bodyTemplate = preset.body_template;
-    responsePath = preset.response_path;
-  }
-
-  // Build headers: always include Content-Type, add Authorization if API key provided
-  const headers = { 'Content-Type': 'application/json', ...extraHeaders };
-  if (apiKey) {
-    headers['Authorization'] = 'Bearer ' + apiKey;
-  }
-
-  const custom_target = { url, headers, body_template: bodyTemplate, response_path: responsePath };
-
-  setRunning(true);
-  statusEl.innerHTML = '<span class="spinner"></span> Running personas against <strong>your agent</strong> at ' + url.substring(0, 40) + '...';
-  resultsEl.innerHTML = '';
-
-  const body = { num_turns: 5, target_config: 'weak', custom_target };
-  const selectedPersonas = getPersonaKeys();
-  if (selectedPersonas) body.persona_keys = selectedPersonas;
-
-  try {
-    const startRes = await fetch('/run-eval', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-    const { run_id, error } = await startRes.json();
-    if (error) {
-      statusEl.textContent = 'Error: ' + error;
-      setRunning(false);
-      return;
-    }
-    runs.custom = run_id;
-    pollForResults(run_id, 'custom');
-  } catch (e) {
-    statusEl.textContent = 'Failed to start evaluation: ' + e.message;
-    setRunning(false);
-  }
-}
-
-async function pollForResults(runId, config) {
-  const res = await fetch('/results/' + runId);
-  const data = await res.json();
-
-  if (data.status === 'done') {
-    statusEl.textContent = 'Done — ' + data.results.length + ' personas tested.';
-    setRunning(false);
-    renderComparison();
-  } else if (data.status === 'not_found') {
-    statusEl.textContent = 'Run not found (may have been pruned).';
-    setRunning(false);
-  } else {
-    setTimeout(() => pollForResults(runId, config), 2000);
-  }
-}
-
-async function fetchRunResults(runId) {
-  if (!runId) return null;
-  const res = await fetch('/results/' + runId);
-  const data = await res.json();
-  return data.status === 'done' ? data : null;
-}
-
-function summarize(results) {
-  let pass = 0, fail = 0, halluc = 0, error = 0;
-  for (const r of results) {
-    const v = r.verdict;
-    if (v.overall_verdict === 'pass') pass++;
-    else if (v.overall_verdict === 'fail') fail++;
-    else error++;
-    if (v.hallucination_detected === true) halluc++;
-  }
-  return { pass, fail, halluc, error, total: results.length };
-}
-
-function renderTranscript(transcript) {
-  if (!transcript || transcript.length === 0) return '<em>No transcript available (error during eval).</em>';
-  return transcript.map(t => {
-    const cls = t.speaker === 'agent' ? 'agent-speak' : 'user-speak';
-    const label = t.speaker === 'agent' ? 'Agent' : 'User';
-    const escaped = t.text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    return '<div class="turn"><span class="speaker ' + cls + '">' + label + ':</span> ' + escaped + '</div>';
-  }).join('');
-}
-
-function renderConfigPanel(label, configKey, results, tagText) {
-  const cls = configKey === 'weak' ? 'weak' : (configKey === 'improved' ? 'improved' : 'custom');
-  if (!tagText) {
-    tagText = configKey === 'weak' ? 'Hallucination-Prone' : (configKey === 'improved' ? 'Safe Fallback' : 'Your Agent');
-  }
-  const summary = summarize(results);
-
-  let cardsHtml = '';
-  for (const r of results) {
-    const v = r.verdict;
-    const badgeCls = v.overall_verdict === 'pass' ? 'pass' : (v.overall_verdict === 'fail' ? 'fail' : 'error');
-    const badgeText = (v.overall_verdict || 'error').toUpperCase();
-    const hallucText = v.hallucination_detected === true ? '⚠️ Yes' : (v.hallucination_detected === false ? 'No' : '—');
-    const taskText = v.task_completed === true ? '✅' : (v.task_completed === false ? '❌' : '—');
-    const topicText = v.stayed_on_topic === true ? '✅' : (v.stayed_on_topic === false ? '❌' : '—');
-    const hallucEvidence = v.hallucination_evidence ? ' — <span style="color:#fbbf24;">"' + v.hallucination_evidence.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '"</span>' : '';
-
-    cardsHtml += '<div class="persona-card" onclick="toggleTranscript(this)">' +
-      '<div class="persona-card-header"><strong>' + r.persona_name + '</strong>' +
-      '<span class="verdict-badge ' + badgeCls + '">' + badgeText + '</span></div>' +
-      '<div class="persona-card-meta">' +
-        '<span>Hallucination: ' + hallucText + hallucEvidence + '</span>' +
-        '<span>Task: ' + taskText + '</span>' +
-        '<span>On-topic: ' + topicText + '</span>' +
-      '</div>' +
-      (v.notes ? '<div class="persona-card-notes">' + v.notes.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' : '') +
-      '<div class="transcript-toggle">▸ Show transcript</div>' +
-      '<div class="transcript-content">' + renderTranscript(r.transcript) + '</div>' +
-    '</div>';
-  }
-
-  return '<div class="config-panel ' + cls + '">' +
-    '<div class="config-header"><h2>' + label + '</h2><span class="tag">' + tagText + '</span></div>' +
-    '<div class="summary-bar">' +
-      '<div class="summary-stat"><span class="num num-pass">' + summary.pass + '</span><span class="label">PASS</span></div>' +
-      '<div class="summary-stat"><span class="num num-fail">' + summary.fail + '</span><span class="label">FAIL</span></div>' +
-      '<div class="summary-stat"><span class="num num-halluc">' + summary.halluc + '</span><span class="label">HALLUCINATION</span></div>' +
-      '<div class="summary-stat"><span class="num">' + summary.total + '</span><span class="label">TOTAL</span></div>' +
-    '</div>' +
-    cardsHtml +
-  '</div>';
-}
-
-async function renderComparison() {
-  const weakResults = await fetchRunResults(runs.weak);
-  const improvedResults = await fetchRunResults(runs.improved);
-  const customResults = await fetchRunResults(runs.custom);
-  const hasCustom = customResults !== null;
-
-  if (!weakResults && !improvedResults && !customResults) {
-    resultsEl.innerHTML = '<div class="empty-state"><p>No evaluation results yet.</p><p class="hint">Click a button above to run an evaluation.</p></div>';
+// ─── Launch evaluation ──────────────────────────────────────
+async function handleLaunchEval(e) {
+  e.preventDefault();
+  const url = document.getElementById('endpoint-url').value.trim();
+  if (!url) return;
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    document.getElementById('url-error').textContent = 'URL must start with http:// or https://';
+    document.getElementById('url-error').style.display = '';
     return;
   }
+  document.getElementById('url-error').style.display = 'none';
 
-  const colClass = (weakResults && improvedResults && hasCustom) ? 'comparison triple' : 'comparison';
-  let html = '<div class="' + colClass + '">';
+  // Build request body
+  const body = {
+    num_turns: 5,
+    target_config: 'weak',
+    niche: selectedNiche,
+    ensemble: document.getElementById('ensemble-toggle').checked,
+  };
 
-  if (weakResults) {
-    html += renderConfigPanel('Weak Bot', 'weak', weakResults.results, null);
-  } else {
-    html += '<div class="config-panel weak"><div class="config-header"><h2>Weak Bot</h2><span class="tag">Not yet run</span></div>' +
-      '<div class="empty-state"><p class="hint">Click "Run Weak Bot" to test.</p></div></div>';
-  }
-  if (improvedResults) {
-    html += renderConfigPanel('Improved Bot', 'improved', improvedResults.results, null);
-  } else {
-    html += '<div class="config-panel improved"><div class="config-header"><h2>Improved Bot</h2><span class="tag">Not yet run</span></div>' +
-      '<div class="empty-state"><p class="hint">Click "Run Improved Bot" to test.</p></div></div>';
-  }
-  if (hasCustom) {
-    const label = customResults.target_config_label || 'Your Agent';
-    const shortLabel = label.length > 35 ? label.substring(0, 35) + '…' : label;
-    html += renderConfigPanel(shortLabel, 'custom', customResults.results, 'Your Agent');
+  const personaKey = document.getElementById('persona-select').value;
+  if (personaKey !== '__all__') body.persona_keys = [personaKey];
+
+  const headers = { 'Content-Type': 'application/json' };
+  const apiKey = document.getElementById('api-key').value.trim();
+  if (apiKey) headers['Authorization'] = 'Bearer ' + apiKey;
+
+  const extraHeaders = document.getElementById('extra-headers').value.trim();
+  if (extraHeaders) {
+    try { Object.assign(headers, JSON.parse(extraHeaders)); } catch {}
   }
 
-  html += '</div>';
-  resultsEl.innerHTML = html;
+  const fmt = document.getElementById('api-format').value;
+  let bodyTemplate = document.getElementById('body-template').value;
+  let responsePath = document.getElementById('response-path').value;
+  if (fmt === 'openai') {
+    bodyTemplate = FORMAT_PRESETS.openai.body_template;
+    responsePath = FORMAT_PRESETS.openai.response_path;
+  } else if (fmt === 'simple') {
+    bodyTemplate = FORMAT_PRESETS.simple.body_template;
+    responsePath = FORMAT_PRESETS.simple.response_path;
+  }
+
+  body.custom_target = {
+    url: url,
+    headers: headers,
+    body_template: bodyTemplate,
+    response_path: responsePath,
+  };
+
+  // Switch to loading
+  runData = null;
+  report = null;
+  optimizedPrompt = '';
+  loadingStep = 1;
+  renderLoading();
+  navigate('loading');
+
+  // Start eval
+  try {
+    const res = await fetch('/run-eval', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      showError(data.error);
+      return;
+    }
+
+    runId = data.run_id;
+    loadingStep = 2;
+    renderLoading();
+    pollForResult();
+    pollInterval = setInterval(pollForResult, 2500);
+  } catch (e) {
+    showError('Failed to start evaluation: ' + e.message);
+  }
 }
 
-function toggleTranscript(cardEl) {
-  const content = cardEl.querySelector('.transcript-content');
-  const toggle = cardEl.querySelector('.transcript-toggle');
-  if (content.classList.contains('open')) {
+async function pollForResult() {
+  try {
+    const res = await fetch('/results/' + runId);
+    const data = await res.json();
+    if (data.status === 'done') {
+      runData = data;
+      loadingStep = 4;
+      renderLoading();
+      clearInterval(pollInterval);
+
+      // Generate report
+      renderReport();
+      navigate('report');
+
+      // Fetch report in background
+      try {
+        const rr = await fetch('/report/' + runId + '/generate', { method: 'POST' });
+        report = await rr.json();
+        if (!report.error) {
+          updateReportWithAI();
+        }
+      } catch {}
+    } else if (data.status === 'not_found') {
+      clearInterval(pollInterval);
+      showError('Evaluation run not found. Please try again.');
+    }
+  } catch {}
+}
+
+function cancelLoading() {
+  if (pollInterval) clearInterval(pollInterval);
+  navigate('home');
+}
+
+function showError(msg) {
+  document.getElementById('error-message').textContent = msg;
+  navigate('error');
+}
+
+// ─── Loading rendering ──────────────────────────────────────
+function renderLoading() {
+  const nicheLabel = niches[selectedNiche]?.label || selectedNiche;
+  document.getElementById('loading-niche-badge').textContent = nicheLabel;
+
+  const steps = [
+    'Generating ' + nicheLabel + ' Personas...',
+    'Simulating Conversations...',
+    'Running Multi-Judge Ensemble...',
+    'Compiling Report...',
+  ];
+
+  const container = document.getElementById('loading-steps');
+  container.innerHTML = '';
+  steps.forEach((label, idx) => {
+    const stepNum = idx + 1;
+    const isCompleted = stepNum < loadingStep;
+    const isCurrent = stepNum === loadingStep;
+    const isFuture = stepNum > loadingStep;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:12px';
+
+    let iconHtml;
+    if (isCompleted) {
+      iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>';
+    } else if (isCurrent) {
+      iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+    } else {
+      iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+    }
+
+    row.innerHTML = iconHtml + '<span style="font-size:0.875rem;' +
+      (isCompleted ? 'color:#cbd5e1' : isCurrent ? 'color:#fff;font-weight:500' : 'color:#475569') +
+      '">' + label + '</span>';
+    container.appendChild(row);
+  });
+}
+
+// ─── Report rendering ───────────────────────────────────────
+function renderReport() {
+  if (!runData) return;
+  const results = runData.results || [];
+
+  // Breadcrumb
+  document.getElementById('report-breadcrumb').textContent = 'Report #' + (runId || '').slice(0, 8);
+
+  // Niche badge
+  document.getElementById('report-niche-badge').textContent = runData.niche_label || runData.niche || 'Niche';
+
+  // Compute scores
+  const totalTests = results.length;
+  const passed = results.filter(r => r.verdict?.overall_verdict === 'pass').length;
+  const failed = results.filter(r => r.verdict?.overall_verdict === 'fail').length;
+  const hallucinations = results.filter(r => r.verdict?.hallucination_detected === true).length;
+
+  // Ensemble
+  const ensembleAgg = aggregateEnsemble(results);
+  const hasEnsemble = ensembleAgg !== null;
+
+  if (hasEnsemble) {
+    document.getElementById('report-ensemble-badge').style.display = '';
+  }
+
+  // Hero score
+  const heroScore = hasEnsemble
+    ? ensembleAgg.avgOverallScore / 10
+    : totalTests > 0 ? (passed / totalTests) * 10 : 0;
+
+  // Animate score
+  animateScore(heroScore, 10, 1500);
+
+  // Draw ring
+  drawScoreRing(heroScore, 10, 220, 10);
+
+  // Risk badge
+  const riskLevel = heroScore >= 8 ? 'LOW' : heroScore >= 5 ? 'MEDIUM' : 'HIGH';
+  const riskBadge = document.getElementById('risk-badge');
+  riskBadge.textContent = riskLevel + ' RISK';
+  riskBadge.className = 'badge ' + (riskLevel === 'LOW' ? 'badge-emerald' : riskLevel === 'MEDIUM' ? 'badge-amber' : 'badge-red');
+
+  // Deploy banner
+  const banner = document.getElementById('deploy-banner');
+  const deployIcon = document.getElementById('deploy-icon');
+  const deployText = document.getElementById('deploy-text');
+  if (heroScore >= 8) {
+    banner.style.borderLeftColor = '#10b981';
+    deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>';
+    deployText.textContent = 'Approve for Deployment';
+  } else if (heroScore >= 5) {
+    banner.style.borderLeftColor = '#f59e0b';
+    deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+    deployText.textContent = 'Approve with Changes';
+  } else {
+    banner.style.borderLeftColor = '#ef4444';
+    deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    deployText.textContent = 'Do Not Deploy';
+  }
+
+  // Stats cards
+  const statData = [
+    { val: totalTests, label: 'Total Tests', color: '#f8fafc' },
+    { val: passed, label: 'Passed', color: '#34d399' },
+    { val: failed, label: 'Failed', color: '#f87171' },
+    { val: hallucinations, label: 'Hallucinations', color: '#fbbf24' },
+  ];
+  const statContainer = document.getElementById('stat-cards');
+  statContainer.innerHTML = '';
+  statData.forEach(s => {
+    statContainer.innerHTML += '<div class="card-hover" style="background:#1e293b;border-radius:12px;padding:16px;text-align:center">' +
+      '<p style="font-size:1.5rem;font-weight:700;color:' + s.color + '">' + s.val + '</p>' +
+      '<p style="font-size:0.75rem;color:#64748b;margin-top:4px">' + s.label + '</p></div>';
+  });
+
+  // Conversations
+  if (results.length > 0) {
+    document.getElementById('conversations-section').style.display = '';
+    renderConversations(results);
+  }
+
+  // Ensemble section
+  if (hasEnsemble) {
+    document.getElementById('ensemble-section').style.display = '';
+    renderEnsemble(ensembleAgg);
+  }
+
+  // Share URL
+  document.getElementById('share-url').value = window.location.href;
+}
+
+function updateReportWithAI() {
+  if (!report || report.error) return;
+
+  // Executive summary
+  if (report.executive_summary) {
+    document.getElementById('exec-summary-section').style.display = '';
+    document.getElementById('exec-summary-text').textContent = report.executive_summary;
+  }
+
+  // Strengths
+  if (report.key_strengths?.length > 0) {
+    document.getElementById('strengths-gaps-section').style.display = '';
+    document.getElementById('strengths-card').style.display = '';
+    const list = document.getElementById('strengths-list');
+    list.innerHTML = '';
+    report.key_strengths.forEach(s => {
+      list.innerHTML += '<div style="display:flex;align-items:flex-start;gap:8px">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>' +
+        '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(s) + '</span></div>';
+    });
+  }
+
+  // Gaps
+  if (report.critical_gaps?.length > 0) {
+    document.getElementById('strengths-gaps-section').style.display = '';
+    document.getElementById('gaps-card').style.display = '';
+    const list = document.getElementById('gaps-list');
+    list.innerHTML = '';
+    report.critical_gaps.forEach(g => {
+      const sevClass = g.severity === 'high' ? 'badge-red' : g.severity === 'medium' ? 'badge-amber' : 'badge-slate';
+      list.innerHTML += '<div style="display:flex;align-items:flex-start;gap:8px">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+            '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(g.issue) + '</span>' +
+            '<span class="badge ' + sevClass + '">' + escHtml(g.severity) + '</span>' +
+          '</div>' +
+          (g.evidence ? '<p style="font-size:0.75rem;color:#64748b;font-style:italic;margin-top:4px">' + escHtml(g.evidence) + '</p>' : '') +
+        '</div></div>';
+    });
+  }
+
+  // Critical flaws
+  const criticalFlaws = (report.critical_gaps || []).filter(g => g.severity === 'high');
+  if (criticalFlaws.length > 0) {
+    document.getElementById('flaws-section').style.display = '';
+    const list = document.getElementById('flaws-list');
+    list.innerHTML = '';
+    criticalFlaws.forEach(f => {
+      list.innerHTML += '<div>' +
+        '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
+          '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(f.issue) + '</span>' +
+        '</div>' +
+        (f.evidence ? '<div style="background:rgba(239,68,68,0.05);border-radius:8px;padding:12px;margin-left:24px">' +
+          '<p style="font-size:0.75rem;color:rgba(248,113,113,0.7);font-weight:500;margin-bottom:4px">Improvement Tip</p>' +
+          '<p style="font-size:0.75rem;color:#94a3b8;font-style:italic">' + escHtml(f.evidence) + '</p></div>' : '') +
+      '</div>';
+    });
+  }
+
+  // Action items
+  if (report.action_items?.length > 0) {
+    document.getElementById('actions-section').style.display = '';
+    const list = document.getElementById('actions-list');
+    list.innerHTML = '';
+    report.action_items.forEach((item, i) => {
+      const prioClass = item.priority === 'P0' ? 'badge-red' : item.priority === 'P1' ? 'badge-amber' : 'badge-slate';
+      list.innerHTML += '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+        '<span style="font-size:0.875rem;font-weight:700;color:#64748b;min-width:24px;margin-top:2px">' + (i + 1) + '.</span>' +
+        '<div style="flex:1">' +
+          '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">' +
+            '<span class="badge ' + prioClass + '">' + escHtml(item.priority) + '</span>' +
+            '<span style="font-size:0.875rem;color:#e2e8f0">' + escHtml(item.action) + '</span>' +
+          '</div>' +
+          '<p style="font-size:0.75rem;color:#64748b">' + escHtml(item.rationale) + '</p>' +
+        '</div></div>';
+    });
+  }
+
+  // Risk assessment
+  if (report.risk_assessment?.length > 0) {
+    document.getElementById('risks-section').style.display = '';
+    const list = document.getElementById('risks-list');
+    list.innerHTML = '';
+    report.risk_assessment.forEach(r => {
+      const lvlClass = r.level === 'critical' ? 'badge-red' : r.level === 'high' ? 'badge-orange' : r.level === 'medium' ? 'badge-amber' : 'badge-slate';
+      list.innerHTML += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
+        '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(r.risk) + '</span>' +
+        '<span class="badge ' + lvlClass + '">' + escHtml(r.level) + '</span></div>';
+    });
+  }
+
+  // Radar charts
+  const hasRadar = (report.dimension_scores && Object.keys(report.dimension_scores).length > 0) ||
+                   (report.ensemble_summary?.average_scores && Object.keys(report.ensemble_summary.average_scores).length > 0);
+  if (hasRadar) {
+    document.getElementById('radar-section').style.display = '';
+    renderRadarCharts(report);
+  }
+}
+
+// ─── Ensemble aggregation ───────────────────────────────────
+function aggregateEnsemble(results) {
+  const ensembles = results.map(r => r.verdict?.ensemble).filter(Boolean);
+  if (!ensembles.length) return null;
+
+  const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const safeties = [], compliances = [], personaMatches = [], emotionals = [], adaptations = [], businesses = [], brandRisks = [], efficiencies = [];
+  const allFlags = [], missedOpps = [], strengths = [], revenueImpacts = [];
+
+  ensembles.forEach(e => {
+    const s = e.judges?.safety;
+    const p = e.judges?.persona;
+    const b = e.judges?.business;
+    if (s) { safeties.push(s.safety_score); compliances.push(s.compliance_score); (s.flags || []).forEach(f => allFlags.push(f)); }
+    if (p) { personaMatches.push(p.persona_match_score); emotionals.push(p.emotional_handling); adaptations.push(p.adaptation); if (p.missed_opportunity) missedOpps.push(p.missed_opportunity); if (p.strength) strengths.push(p.strength); }
+    if (b) { businesses.push(b.business_score); brandRisks.push(b.brand_risk); efficiencies.push(b.efficiency_score); if (b.revenue_impact) revenueImpacts.push(b.revenue_impact); }
+  });
+
+  const confCounts = { high: 0, medium: 0, low: 0 };
+  ensembles.forEach(e => confCounts[e.confidence] = (confCounts[e.confidence] || 0) + 1);
+  const majorityConf = Object.entries(confCounts).sort((a, b) => b[1] - a[1])[0][0];
+
+  return {
+    avgSafety: avg(safeties), avgCompliance: avg(compliances),
+    avgPersonaMatch: avg(personaMatches), avgEmotionalHandling: avg(emotionals), avgAdaptation: avg(adaptations),
+    avgBusiness: avg(businesses), avgBrandRisk: avg(brandRisks), avgEfficiency: avg(efficiencies),
+    allFlags, missedOpportunities: missedOpps, strengths, revenueImpacts,
+    avgOverallScore: avg(ensembles.map(e => e.overall_score)),
+    confidence: majorityConf,
+    conflictAnalysis: ensembles.find(e => e.conflict_analysis)?.conflict_analysis,
+    finalVerdict: ensembles.find(e => e.final_verdict)?.final_verdict,
+    priorityFix: ensembles.find(e => e.priority_fix)?.priority_fix,
+  };
+}
+
+// ─── Render ensemble ────────────────────────────────────────
+function renderEnsemble(agg) {
+  const cards = document.getElementById('judge-cards');
+  const brandColor = agg.avgBrandRisk <= 30 ? '#10b981' : agg.avgBrandRisk <= 60 ? '#f59e0b' : '#ef4444';
+
+  cards.innerHTML = `
+    <!-- Safety & Compliance -->
+    <div class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <h3 style="font-size:0.875rem;font-weight:600;color:#f8fafc">Safety &amp; Compliance</h3>
+      </div>
+      ${progressBar('Safety Score', agg.avgSafety, 100, '#6366f1', 200)}
+      ${progressBar('Compliance Score', agg.avgCompliance, 100, '#10b981', 400)}
+      ${agg.allFlags.length > 0 ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + agg.allFlags.slice(0, 6).map(f => '<span class="badge badge-red">' + escHtml(f.type) + '</span>').join('') + '</div>' : ''}
+    </div>
+
+    <!-- Persona & UX -->
+    <div class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
+        <h3 style="font-size:0.875rem;font-weight:600;color:#f8fafc">Persona &amp; UX</h3>
+      </div>
+      ${progressBar('Persona Match', agg.avgPersonaMatch, 100, '#6366f1', 200)}
+      ${progressBar('Emotional Handling', agg.avgEmotionalHandling, 100, '#8b5cf6', 350)}
+      ${progressBar('Adaptation', agg.avgAdaptation, 100, '#06b6d4', 500)}
+      ${agg.missedOpportunities.length > 0 ? '<p style="color:#64748b;font-size:0.75rem;font-style:italic;margin-top:8px">Missed: ' + escHtml(agg.missedOpportunities[0]) + '</p>' : ''}
+      ${agg.strengths.length > 0 ? '<p style="color:#34d399;font-size:0.75rem;margin-top:4px">Strength: ' + escHtml(agg.strengths[0]) + '</p>' : ''}
+    </div>
+
+    <!-- Business & Strategy -->
+    <div class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        </div>
+        <h3 style="font-size:0.875rem;font-weight:600;color:#f8fafc">Business &amp; Strategy</h3>
+      </div>
+      ${progressBar('Business Score', agg.avgBusiness, 100, '#6366f1', 200)}
+      ${progressBar('Brand Risk', agg.avgBrandRisk, 100, brandColor, 400)}
+      ${progressBar('Efficiency Score', agg.avgEfficiency, 100, '#06b6d4', 600)}
+      ${agg.revenueImpacts.length > 0 ? '<span class="badge ' + (agg.revenueImpacts[0] === 'positive' ? 'badge-emerald' : agg.revenueImpacts[0] === 'negative' ? 'badge-red' : 'badge-slate') + '" style="margin-top:4px;font-size:10px">Revenue: ' + escHtml(agg.revenueImpacts[0]) + '</span>' : ''}
+    </div>
+  `;
+
+  // Verdict card
+  const verdict = document.getElementById('ensemble-verdict');
+  verdict.style.display = '';
+  const confClass = agg.confidence === 'high' ? 'badge-emerald' : agg.confidence === 'medium' ? 'badge-amber' : 'badge-red';
+  let html = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
+    '<span style="font-size:2.25rem;font-weight:700;color:#a5b4fc;font-variant-numeric:tabular-nums">' + (agg.avgOverallScore / 10).toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:#64748b">/10</span></span>' +
+    '<div style="display:flex;align-items:center;gap:8px">' +
+      '<span style="font-size:0.75rem;color:#64748b">Confidence:</span>' +
+      '<span class="badge ' + confClass + '">' + agg.confidence.charAt(0).toUpperCase() + agg.confidence.slice(1) + '</span>' +
+    '</div></div>';
+
+  if (agg.finalVerdict) {
+    html += '<blockquote style="font-size:1.125rem;font-style:italic;color:#cbd5e1;border-left:4px solid #6366f1;padding-left:16px;margin-top:16px">' + escHtml(agg.finalVerdict) + '</blockquote>';
+  }
+  if (agg.conflictAnalysis) {
+    html += '<div style="border-left:4px solid #f59e0b;background:rgba(245,158,11,0.05);border-radius:0 8px 8px 0;padding:16px;margin-top:16px">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>' +
+        '<span style="font-size:0.875rem;font-weight:500;color:#fbbf24">Conflict Analysis</span></div>' +
+      '<p style="font-size:0.875rem;color:#94a3b8">' + escHtml(agg.conflictAnalysis) + '</p></div>';
+  }
+  if (agg.priorityFix) {
+    html += '<div style="border:1px solid rgba(239,68,68,0.3);border-left:4px solid #ef4444;background:rgba(239,68,68,0.05);border-radius:0 8px 8px 0;padding:16px;margin-top:16px">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' +
+        '<span style="font-size:0.875rem;font-weight:500;color:#f87171">Priority Fix</span></div>' +
+      '<p style="font-size:0.875rem;color:#94a3b8">' + escHtml(agg.priorityFix) + '</p></div>';
+  }
+  verdict.innerHTML = html;
+
+  // Animate progress bars after a tick
+  requestAnimationFrame(() => {
+    verdict.querySelectorAll('.progress-fill').forEach(bar => {
+      bar.style.width = bar.dataset.target + '%';
+    });
+    cards.querySelectorAll('.progress-fill').forEach(bar => {
+      bar.style.width = bar.dataset.target + '%';
+    });
+  });
+}
+
+function progressBar(label, value, max, color, delay) {
+  const pct = Math.round((value / max) * 100);
+  return '<div style="width:100%;margin-bottom:12px">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+      '<span style="font-size:0.75rem;color:#94a3b8">' + escHtml(label) + '</span>' +
+      '<span style="font-size:0.75rem;color:#94a3b8;font-family:monospace">' + Math.round(value) + '/' + Math.round(max) + '</span>' +
+    '</div>' +
+    '<div class="progress-track">' +
+      '<div class="progress-fill" data-target="' + pct + '" style="width:0;background:' + color + ';transition:width 1s cubic-bezier(0.4,0,0.2,1) ' + delay + 'ms"></div>' +
+    '</div></div>';
+}
+
+// ─── Conversations ──────────────────────────────────────────
+function renderConversations(results) {
+  const container = document.getElementById('conversations-list');
+  container.innerHTML = '';
+  results.forEach((result, ri) => {
+    const verdict = result.verdict || {};
+    const isPass = verdict.overall_verdict === 'pass';
+    const isFail = verdict.overall_verdict === 'fail';
+    const verdictClass = isPass ? 'badge-emerald' : isFail ? 'badge-red' : 'badge-slate';
+
+    let html = '<div style="border-bottom:1px solid rgba(255,255,255,0.05)">';
+    html += '<button class="accordion-trigger" onclick="toggleAccordion(this)" aria-expanded="false">' +
+      '<div style="display:flex;align-items:center;gap:12px">' +
+        '<span style="font-size:0.875rem;font-weight:500;color:#f8fafc">' + escHtml(result.persona_name || result.persona_key || 'Unknown') + '</span>' +
+        '<span class="badge ' + verdictClass + '">' + (verdict.overall_verdict || 'ERROR').toUpperCase() + '</span>' +
+      '</div>' +
+      '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
+    '</button>';
+
+    html += '<div class="accordion-content"><div class="accordion-body">';
+
+    // Chat bubbles
+    const transcript = result.transcript || [];
+    html += '<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:16px;max-height:320px;overflow-y:auto">';
+    transcript.forEach((msg, mi) => {
+      const isUser = msg.speaker === 'user';
+      // Find last agent message for border
+      const lastAgentIdx = transcript.map((m, i) => m.speaker !== 'user' ? i : -1).filter(i => i >= 0).pop();
+      const isLastAgent = !isUser && mi === lastAgentIdx;
+      const borderClass = isLastAgent ? (isPass ? ' pass-border' : isFail ? ' fail-border' : ' error-border') : '';
+
+      html += '<div class="chat-msg ' + (isUser ? 'user' : 'agent') + '">' +
+        '<div class="chat-msg-inner">' +
+          '<div class="chat-avatar ' + (isUser ? 'user-av' : 'agent-av') + '">' +
+            (isUser
+              ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+              : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>') +
+          '</div>' +
+          '<div class="chat-bubble' + borderClass + '">' + escHtml(msg.text) + '</div>' +
+        '</div></div>';
+    });
+    html += '</div>';
+
+    // Dimension checks
+    const dims = verdict.dimensions;
+    if (dims && Object.keys(dims).length > 0) {
+      html += '<div style="background:#0f172a;border-radius:8px;padding:12px;font-size:0.75rem">' +
+        '<p style="color:#64748b;font-weight:500;margin-bottom:8px">Dimension Checks:</p>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+      for (const [dim, data] of Object.entries(dims)) {
+        const dimLabel = dim.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        let icon;
+        if (data.pass === true) {
+          icon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>';
+        } else if (data.pass === false) {
+          icon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+        } else {
+          icon = '<div style="width:12px;height:12px;border-radius:50%;background:#475569"></div>';
+        }
+        html += '<div style="display:flex;align-items:center;gap:6px">' + icon + '<span style="color:#94a3b8">' + dimLabel + '</span></div>';
+      }
+      html += '</div></div>';
+    }
+
+    html += '</div></div></div>';
+    container.innerHTML += html;
+  });
+}
+
+function toggleAccordion(btn) {
+  const content = btn.nextElementSibling;
+  const expanded = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', !expanded);
+  if (expanded) {
     content.classList.remove('open');
-    toggle.textContent = '▸ Show transcript';
   } else {
     content.classList.add('open');
-    toggle.textContent = '▾ Hide transcript';
   }
 }
 
-runWeakBtn.addEventListener('click', () => startRun('weak'));
-runImprovedBtn.addEventListener('click', () => startRun('improved'));
-runCustomBtn.addEventListener('click', startCustomRun);
+// ─── Radar charts ───────────────────────────────────────────
+function renderRadarCharts(rep) {
+  const container = document.getElementById('radar-charts');
+  container.innerHTML = '';
 
-// On page load, render any existing comparison
-renderComparison();
+  if (rep.dimension_scores && Object.keys(rep.dimension_scores).length > 0) {
+    const data = Object.entries(rep.dimension_scores).map(([dim, d]) => ({
+      dimension: dim.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      score: d.total > 0 ? Math.round((d.pass / d.total) * 100) : 0,
+    }));
+    container.innerHTML += '<div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.1);padding:24px">' +
+      '<h3 style="font-size:0.875rem;font-weight:600;color:#cbd5e1;margin-bottom:16px">Pass Rate by Dimension</h3>' +
+      '<div style="position:relative;height:300px"><canvas id="radar-dimensions"></canvas></div></div>';
+  }
+
+  if (rep.ensemble_summary?.average_scores) {
+    const data = Object.entries(rep.ensemble_summary.average_scores).map(([k, v]) => ({
+      dimension: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+      score: Math.round(v * 10) / 10,
+    }));
+    container.innerHTML += '<div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.1);padding:24px">' +
+      '<h3 style="font-size:0.875rem;font-weight:600;color:#cbd5e1;margin-bottom:16px">Judge Average Scores</h3>' +
+      '<div style="position:relative;height:300px"><canvas id="radar-judges"></canvas></div></div>';
+  }
+
+  // Create charts after DOM update
+  requestAnimationFrame(() => {
+    if (rep.dimension_scores) {
+      const dimData = Object.entries(rep.dimension_scores).map(([dim, d]) => ({
+        dimension: dim.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        score: d.total > 0 ? Math.round((d.pass / d.total) * 100) : 0,
+      }));
+      createRadarChart('radar-dimensions', dimData, '#6366f1', 'rgba(99,102,241,0.2)');
+    }
+    if (rep.ensemble_summary?.average_scores) {
+      const judgeData = Object.entries(rep.ensemble_summary.average_scores).map(([k, v]) => ({
+        dimension: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
+        score: Math.round(v * 10) / 10,
+      }));
+      createRadarChart('radar-judges', judgeData, '#10b981', 'rgba(16,185,129,0.2)');
+    }
+  });
+}
+
+function createRadarChart(canvasId, data, strokeColor, fillColor) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: data.map(d => d.dimension),
+      datasets: [{
+        data: data.map(d => d.score),
+        borderColor: strokeColor,
+        backgroundColor: fillColor,
+        borderWidth: 2,
+        pointBackgroundColor: strokeColor,
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: 100,
+          ticks: { display: false },
+          grid: { color: 'rgba(255,255,255,0.1)' },
+          angleLines: { color: 'rgba(255,255,255,0.1)' },
+          pointLabels: { color: '#94a3b8', font: { size: 11 } },
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e293b',
+          borderColor: strokeColor + '4d',
+          borderWidth: 1,
+          titleColor: '#e2e8f0',
+          bodyColor: '#cbd5e1',
+          cornerRadius: 8,
+          titleFont: { size: 13 },
+          bodyFont: { size: 12 },
+        }
+      }
+    }
+  });
+}
+
+// ─── Score animation ────────────────────────────────────────
+function animateScore(value, max, duration) {
+  const el = document.getElementById('score-display');
+  const start = performance.now();
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = eased * value;
+    el.innerHTML = current.toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:#64748b">/' + max + '</span>';
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function drawScoreRing(value, max, size, strokeWidth) {
+  const svg = document.getElementById('score-ring');
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const safeValue = Math.min(Math.max(value, 0), max);
+  const offset = circumference - (safeValue / max) * circumference;
+  const ratio = safeValue / max;
+  const color = ratio >= 0.8 ? '#10b981' : ratio >= 0.5 ? '#f59e0b' : '#ef4444';
+
+  svg.innerHTML =
+    '<circle class="ring-track" cx="' + (size/2) + '" cy="' + (size/2) + '" r="' + radius + '" />' +
+    '<circle class="ring-progress" cx="' + (size/2) + '" cy="' + (size/2) + '" r="' + radius + '" ' +
+      'stroke="' + color + '" stroke-dasharray="' + circumference + '" ' +
+      'style="--ring-circumference:' + circumference + ';--ring-target:' + offset + '" />';
+}
+
+// ─── Prompt optimizer ───────────────────────────────────────
+async function handleOptimizePrompt() {
+  if (!runId || optimizing) return;
+  optimizing = true;
+  const btn = document.getElementById('optimize-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Generating...';
+
+  try {
+    const res = await fetch('/report/' + runId + '/optimize-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    optimizedPrompt = data.optimized_prompt || data.error || 'Optimization failed.';
+    document.getElementById('prompt-content').textContent = optimizedPrompt;
+    document.getElementById('prompt-modal').classList.add('open');
+  } catch (e) {
+    optimizedPrompt = 'Optimization failed. Please try again.';
+    document.getElementById('prompt-content').textContent = optimizedPrompt;
+    document.getElementById('prompt-modal').classList.add('open');
+  }
+
+  optimizing = false;
+  btn.disabled = false;
+  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg> Generate Improved System Prompt';
+}
+
+function closePromptModal() {
+  document.getElementById('prompt-modal').classList.remove('open');
+}
+
+// ─── Clipboard helpers ──────────────────────────────────────
+async function copyShareUrl() {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    document.getElementById('copy-url-text').textContent = 'Copied!';
+    setTimeout(() => document.getElementById('copy-url-text').textContent = 'Copy', 2000);
+  } catch {}
+}
+
+async function copyOptimizedPrompt() {
+  try {
+    await navigator.clipboard.writeText(optimizedPrompt);
+    document.getElementById('copy-prompt-text').textContent = 'Copied!';
+    setTimeout(() => document.getElementById('copy-prompt-text').textContent = 'Copy to Clipboard', 2000);
+  } catch {}
+}
+
+// ─── Utility ────────────────────────────────────────────────
+function escHtml(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ─── Init ───────────────────────────────────────────────────
+init();
 </script>
 </body>
 </html>
