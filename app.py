@@ -8,12 +8,15 @@ Run locally:
 Then open http://localhost:8000
 """
 
+import os
 import uuid
 import asyncio
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+
+_static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 from personas import PERSONAS, NICHE_LABELS, ALL_NICHES, get_personas_for_niche
 from simulator import run_persona_conversation
@@ -246,9 +249,15 @@ async def optimize_prompt_endpoint(run_id: str, body: dict | None = None):
 
 
 # ---------------------------------------------------------------------------
+# Shareable report URL: serve the SPA shell so JS can hydrate the report
+# ---------------------------------------------------------------------------
+@app.get("/report/{run_id}")
+async def report_page(run_id: str):
+    """Serve the frontend shell for /report/{run_id} — the SPA JS handles the rest."""
+    return FileResponse(os.path.join(_static_dir, "index.html"))
+
+
+# ---------------------------------------------------------------------------
 # Serve the single-page HTML frontend
 # ---------------------------------------------------------------------------
-import os
-
-_static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")

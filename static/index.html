@@ -606,7 +606,7 @@ main{flex:1}
 </div>
 
 <!-- ═══════════════ FOOTER ═══════════════ -->
-<footer class="footer no-print">Persona-Bench &mdash; OpenAI Codex Hackathon 2026</footer>
+<footer class="footer no-print">Persona-Bench &mdash; OpenAI Codex Hackathon 2025</footer>
 
 <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
 <script>
@@ -630,6 +630,8 @@ const FORMAT_PRESETS = {
 };
 
 // ─── Navigation ─────────────────────────────────────────────
+let _skipUrlUpdate = false; // set by popstate handler to avoid pushState loops
+
 function navigate(view) {
   // Hide all views
   document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
@@ -641,6 +643,13 @@ function navigate(view) {
   document.querySelectorAll('[data-nav]').forEach(a => {
     a.classList.toggle('active', a.dataset.nav === view);
   });
+
+  // Sync browser URL to match the view (skip when driven by popstate)
+  if (!_skipUrlUpdate) {
+    if (view === 'home' && window.location.pathname !== '/') {
+      history.pushState({ view: 'home' }, '', '/');
+    }
+  }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -728,6 +737,71 @@ async function init() {
 
   // Handle form submit
   document.getElementById('eval-form-el').addEventListener('submit', handleLaunchEval);
+
+  // ── Deep-link: load report if URL is /report/{id} ─────────
+  const pathMatch = window.location.pathname.match(/^\/report\/([a-f0-9-]+)$/i);
+  if (pathMatch) {
+    const deepLinkId = pathMatch[1];
+    try {
+      const resp = await fetch('/report/' + deepLinkId + '/data');
+      const data = await resp.json();
+      if (data.error) {
+        showError('Report not found: ' + data.error);
+      } else {
+        runId = deepLinkId;
+        runData = data;
+        renderReport();
+        navigate('report');
+        history.replaceState({ view: 'report', runId: deepLinkId }, '', '/report/' + deepLinkId);
+        try {
+          const rr = await fetch('/report/' + runId + '/generate', { method: 'POST' });
+          report = await rr.json();
+          if (!report.error) updateReportWithAI();
+        } catch {}
+      }
+    } catch (e) {
+      showError('Failed to load report: ' + e.message);
+    }
+  }
+
+  // ── Browser back/forward (popstate) ───────────────────────
+  window.addEventListener('popstate', (e) => {
+    const reportMatch = window.location.pathname.match(/^\/report\/([a-f0-9-]+)$/i);
+    if (reportMatch && e.state && e.state.view === 'report' && e.state.runId) {
+      if (currentView !== 'report' || runId !== e.state.runId) {
+        loadReportById(e.state.runId);
+      }
+    } else {
+      _skipUrlUpdate = true;
+      navigate('home');
+      _skipUrlUpdate = false;
+    }
+  });
+}
+
+async function loadReportById(id) {
+  try {
+    const resp = await fetch('/report/' + id + '/data');
+    const data = await resp.json();
+    if (data.error) {
+      showError('Report not found: ' + data.error);
+      return;
+    }
+    runId = id;
+    runData = data;
+    report = null;
+    renderReport();
+    _skipUrlUpdate = true;
+    navigate('report');
+    _skipUrlUpdate = false;
+    try {
+      const rr = await fetch('/report/' + id + '/generate', { method: 'POST' });
+      report = await rr.json();
+      if (!report.error) updateReportWithAI();
+    } catch {}
+  } catch (e) {
+    showError('Failed to load report: ' + e.message);
+  }
 }
 
 function populateNicheSelect() {
@@ -867,6 +941,7 @@ async function pollForResult() {
       // Generate report
       renderReport();
       navigate('report');
+      history.pushState({ view: 'report', runId: runId }, '', '/report/' + runId);
 
       // Fetch report in background
       try {
