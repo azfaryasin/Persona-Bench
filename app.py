@@ -23,7 +23,6 @@ from simulator import run_persona_conversation
 from judge import judge_transcript, JUDGE_DIMENSIONS
 from target_agent import TARGET_CONFIGS
 from report import generate_report, optimize_system_prompt
-from persona_bench_bot_server import bot_router
 
 app = FastAPI(title="Persona Bench")
 
@@ -31,7 +30,6 @@ app = FastAPI(title="Persona Bench")
 RESULTS: dict[str, dict] = {}
 ALL_RUN_IDS: list[str] = []  # ordered list for frontend to list runs
 
-app.include_router(bot_router, prefix='/bot')
 
 class RunEvalRequest(BaseModel):
     persona_keys: list[str] = []  # default: all personas for the selected niche
@@ -39,6 +37,8 @@ class RunEvalRequest(BaseModel):
     target_config: str = "weak"
     niche: str = "general"
     ensemble: bool = True  # multi-judge ensemble; set False for legacy single judge
+    strict: bool = False  # True = 4 separate LLM calls (Advanced/Strict mode); False = 1 combined call
+    consistency_check: bool = False  # True = run judge twice to measure score stability
     custom_target: dict | None = None  # BYO agent: {url, method, headers, body_template, response_path}
 
 
@@ -116,7 +116,11 @@ async def run_eval(req: RunEvalRequest):
                     convo = await run_persona_conversation(pk, "__custom__", req.num_turns, personas_dict=niche_personas)
                 else:
                     convo = await run_persona_conversation(pk, req.target_config, req.num_turns, personas_dict=niche_personas)
-                verdict = await judge_transcript(convo["persona_name"], convo["transcript"], niche=req.niche, ensemble=req.ensemble)
+                verdict = await judge_transcript(
+                    convo["persona_name"], convo["transcript"],
+                    niche=req.niche, ensemble=req.ensemble, strict=req.strict,
+                    consistency_check=req.consistency_check,
+                )
                 scored.append({**convo, "verdict": verdict})
             except Exception as e:
                 # Don't let one bad persona crash the whole eval

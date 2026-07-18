@@ -851,6 +851,41 @@ body {
               Advanced Options
             </button>
             <div id="advanced-section" style="display:none;padding-top:12px">
+              <!-- Strict Mode Toggle -->
+              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:14px 16px;margin-bottom:10px">
+                <div>
+                  <label class="form-label" for="strict-toggle" style="cursor:pointer;margin:0">Strict Mode (4 Separate Judges)</label>
+                  <p style="font-size:0.7rem;color:rgba(0,0,0,0.4);margin-top:2px">4 parallel LLM calls — more thorough, ~3x token cost</p>
+                </div>
+                <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0">
+                  <input type="checkbox" id="strict-toggle" style="opacity:0;width:0;height:0">
+                  <span style="position:absolute;inset:0;background:rgba(0,0,0,0.15);border-radius:9999px;transition:background 0.2s"></span>
+                  <span style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left 0.2s"></span>
+                </label>
+              </div>
+
+              <!-- Consistency Check Toggle -->
+              <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:14px 16px;margin-bottom:10px">
+                <div>
+                  <label class="form-label" for="consistency-toggle" style="cursor:pointer;margin:0">Consistency Check</label>
+                  <p style="font-size:0.7rem;color:rgba(0,0,0,0.4);margin-top:2px">Run judge twice to measure score stability (2x token cost)</p>
+                </div>
+                <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0">
+                  <input type="checkbox" id="consistency-toggle" style="opacity:0;width:0;height:0">
+                  <span style="position:absolute;inset:0;background:rgba(0,0,0,0.15);border-radius:9999px;transition:background 0.2s"></span>
+                  <span style="position:absolute;top:2px;left:2px;width:18px;height:18px;background:#fff;border-radius:50%;transition:left 0.2s"></span>
+                </label>
+              </div>
+
+              <!-- Combined cost warning (shown when both are on) -->
+              <div id="cost-warning" style="display:none;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.04);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+                  <span style="font-size:0.75rem;font-weight:500;color:#dc2626">Both enabled: ~6x API token cost per persona</span>
+                </div>
+                <p style="font-size:0.7rem;color:rgba(0,0,0,0.45);margin-top:4px;line-height:1.4">Strict (4 judges) + Consistency (runs twice) = 8 LLM calls per persona instead of 1. Use sparingly for final validation.</p>
+              </div>
+
               <div class="form-group">
                 <label class="form-label" for="extra-headers">Extra Headers</label>
                 <textarea class="form-input textarea" id="extra-headers" placeholder="{&quot;X-Custom-Header&quot;: &quot;value&quot;}" style="min-height:60px"></textarea>
@@ -878,7 +913,7 @@ body {
           </button>
 
           <p style="font-size:0.75rem;color:rgba(0,0,0,0.4);text-align:center;margin-top:4px">
-            Takes ~30 seconds • Multi-judge ensemble • Niche-specific scenarios
+            Takes ~30 seconds • Multi-judge ensemble • Niche-specific scenarios • Advanced modes in options
           </p>
         </form>
       </div>
@@ -1381,7 +1416,7 @@ body {
 </div>
 
 <!-- ═══════════════ FOOTER ═══════════════ -->
-<footer class="footer no-print">Persona-Bench — OpenAI Codex Hackathon 2026</footer>
+<footer class="footer no-print">Persona-Bench — OpenAI Codex Hackathon 2025</footer>
 
 <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
 
@@ -1474,12 +1509,22 @@ document.getElementById('ensemble-toggle').addEventListener('change', function()
   const track = document.getElementById('switch-track');
   const thumb = document.getElementById('switch-thumb');
   if (this.checked) {
-    track.style.background = '#ffffff';
+    track.style.background = '#000000';
     thumb.style.left = '22px';
   } else {
-    track.style.background = 'rgba(0,0,0,0.25)';
+    track.style.background = 'rgba(0,0,0,0.15)';
     thumb.style.left = '2px';
   }
+  // Strict/consistency only apply when ensemble is on
+  const advSec = document.getElementById('advanced-section');
+  const strictToggle = document.getElementById('strict-toggle');
+  const consToggle = document.getElementById('consistency-toggle');
+  if (!this.checked) {
+    strictToggle.checked = false;
+    consToggle.checked = false;
+  }
+  initSmallToggle('strict-toggle');
+  initSmallToggle('consistency-toggle');
 });
 
 // ─── Advanced toggle ────────────────────────────────────────
@@ -1490,6 +1535,34 @@ function toggleAdvanced() {
   sec.style.display = open ? '' : 'none';
   chev.style.transform = open ? 'rotate(180deg)' : '';
 }
+
+// ─── Small toggle switches (strict, consistency) ────────────
+function initSmallToggle(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const track = el.parentElement.querySelector('span:first-of-type');
+  const thumb = el.parentElement.querySelector('span:last-of-type');
+  const update = () => {
+    if (el.checked) {
+      track.style.background = '#000000';
+      thumb.style.left = '20px';
+    } else {
+      track.style.background = 'rgba(0,0,0,0.15)';
+      thumb.style.left = '2px';
+    }
+    // Show combined cost warning when both strict + consistency are on
+    const warn = document.getElementById('cost-warning');
+    if (warn) {
+      const s = document.getElementById('strict-toggle')?.checked;
+      const c = document.getElementById('consistency-toggle')?.checked;
+      warn.style.display = (s && c) ? '' : 'none';
+    }
+  };
+  el.addEventListener('change', update);
+  update();
+}
+initSmallToggle('strict-toggle');
+initSmallToggle('consistency-toggle');
 
 // ─── API format change ──────────────────────────────────────
 function onFormatChange() {
@@ -1660,6 +1733,8 @@ async function handleLaunchEval(e) {
     target_config: 'weak',
     niche: selectedNiche,
     ensemble: document.getElementById('ensemble-toggle').checked,
+    strict: document.getElementById('strict-toggle').checked,
+    consistency_check: document.getElementById('consistency-toggle').checked,
   };
 
   const personaKey = document.getElementById('persona-select').value;
@@ -1772,7 +1847,7 @@ function renderLoading() {
   const steps = [
     'Generating ' + nicheLabel + ' Personas...',
     'Simulating Conversations...',
-    'Running Multi-Judge Ensemble...',
+    'Running Multi-Judge Ensemble' + (body.strict ? ' (Strict Mode — 4 separate judges)...' : '...') + (body.consistency_check ? ' + Consistency Check...' : ''),
     'Compiling Report...',
   ];
 
@@ -2028,6 +2103,7 @@ function aggregateEnsemble(results) {
     conflictAnalysis: ensembles.find(e => e.conflict_analysis)?.conflict_analysis,
     finalVerdict: ensembles.find(e => e.final_verdict)?.final_verdict,
     priorityFix: ensembles.find(e => e.priority_fix)?.priority_fix,
+    consistency: ensembles.find(e => e.consistency)?.consistency || null,
   };
 }
 
@@ -2108,6 +2184,49 @@ function renderEnsemble(agg) {
         '<span style="font-size:0.875rem;font-weight:500;color:#dc2626">Priority Fix</span></div>' +
       '<p style="font-size:0.875rem;color:rgba(0,0,0,0.5)">' + escHtml(agg.priorityFix) + '</p></div>';
   }
+
+  // Consistency check results
+  if (agg.consistency) {
+    const c = agg.consistency;
+    const stabClass = c.stability === 'high' ? '#10b981' : c.stability === 'medium' ? '#d97706' : '#ef4444';
+    const stabBg = c.stability === 'high' ? 'rgba(16,185,129,0.05)' : c.stability === 'medium' ? 'rgba(245,158,11,0.05)' : 'rgba(239,68,68,0.05)';
+    const matchIcon = c.verdict_match ? '&#10003;' : '&#10007;';
+    const matchColor = c.verdict_match ? '#10b981' : '#ef4444';
+
+    let dimRows = '';
+    const dimLabels = {quality: 'Quality', safety: 'Safety', persona: 'Persona', business: 'Business'};
+    if (c.per_dimension) {
+      for (const [key, val] of Object.entries(c.per_dimension)) {
+        if (val.delta !== null && val.delta !== undefined) {
+          const deltaColor = val.delta <= 5 ? '#10b981' : val.delta <= 12 ? '#d97706' : '#ef4444';
+          dimRows += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05)">' +
+            '<span style="font-size:0.8rem;color:rgba(0,0,0,0.6)">' + dimLabels[key] + '</span>' +
+            '<div style="display:flex;align-items:center;gap:8px">' +
+              '<span style="font-size:0.8rem;font-variant-numeric:tabular-nums;color:rgba(0,0,0,0.5)">Run A: ' + val.run_a + '</span>' +
+              '<span style="font-size:0.7rem;color:rgba(0,0,0,0.3)">&#8594;</span>' +
+              '<span style="font-size:0.8rem;font-variant-numeric:tabular-nums;color:rgba(0,0,0,0.5)">Run B: ' + val.run_b + '</span>' +
+              '<span style="font-size:0.75rem;font-weight:600;color:' + deltaColor + '">&#916;' + val.delta + 'pts</span>' +
+            '</div></div>';
+        }
+      }
+    }
+
+    html += '<div style="border:1px solid rgba(0,0,0,0.08);border-left:4px solid ' + stabClass + ';background:' + stabBg + ';border-radius:0 8px 8px 0;padding:16px;margin-top:16px">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">' +
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="' + stabClass + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>' +
+        '<span style="font-size:0.875rem;font-weight:600;color:' + stabClass + '">Consistency Check</span>' +
+        '<span class="badge ' + (c.stability === 'high' ? 'badge-emerald' : c.stability === 'medium' ? 'badge-amber' : 'badge-red') + '" style="font-size:0.65rem">' + c.stability.charAt(0).toUpperCase() + c.stability.slice(1) + ' Stability</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">' +
+        '<span style="font-size:0.8rem;color:rgba(0,0,0,0.5)">Avg Delta: <strong style="color:#000000">' + (c.avg_delta !== null ? c.avg_delta + 'pts' : 'N/A') + '</strong></span>' +
+        '<span style="font-size:0.8rem;color:rgba(0,0,0,0.5)">Max Delta: <strong>' + (c.max_delta !== null ? c.max_delta + 'pts' : 'N/A') + '</strong></span>' +
+        '<span style="font-size:0.8rem;color:rgba(0,0,0,0.5)">Verdict Match: <strong style="color:' + matchColor + '">' + matchIcon + '</strong></span>' +
+      '</div>' +
+      dimRows +
+      (c.note ? '<p style="font-size:0.75rem;color:rgba(0,0,0,0.4);margin-top:10px;font-style:italic">' + escHtml(c.note) + '</p>' : '') +
+    '</div>';
+  }
+
   verdict.innerHTML = html;
 
   // Animate progress bars after a tick
