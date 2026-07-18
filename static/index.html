@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Persona-Bench — AI Agent Evaluation</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+
 /* ── Reset & Base ─────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#0f172a;color:#f8fafc;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#ffffff;color:#000000;min-height:100vh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
 input,select,textarea{font-family:inherit;color:inherit}
@@ -20,40 +20,40 @@ input,select,textarea{font-family:inherit;color:inherit}
 /* ── Scrollbar ───────────────────────────────────────────── */
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
-::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.2)}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,0.15);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,0.25)}
 
 /* ── Nav ─────────────────────────────────────────────────── */
-.nav{position:sticky;top:0;z-index:50;background:rgba(15,23,42,0.8);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.1)}
+.nav{position:sticky;top:0;z-index:50;background:rgba(255,255,255,0.8);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-bottom:1px solid rgba(0,0,0,0.08)}
 .nav-inner{max-width:1280px;margin:0 auto;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px}
-.nav-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:0.95rem;color:#f8fafc;cursor:pointer}
+.nav-logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:0.95rem;color:#000000;cursor:pointer}
 .nav-logo:hover{opacity:0.85}
 .nav-links{display:flex;align-items:center;gap:24px}
-.nav-link{font-size:0.875rem;font-weight:500;color:#94a3b8;transition:color 0.2s;cursor:pointer;background:none;border:none;padding:0}
-.nav-link:hover{color:#e2e8f0}
-.nav-link.active{color:#818cf8}
+.nav-link{font-size:0.875rem;font-weight:500;color:rgba(0,0,0,0.5);transition:color 0.2s;cursor:pointer;background:none;border:none;padding:0}
+.nav-link:hover{color:rgba(0,0,0,0.9)}
+.nav-link.active{color:#000000}
 .nav-right{display:flex;align-items:center;gap:12px}
-.demo-badge{font-size:10px;padding:3px 10px;border-radius:9999px;background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.25);font-weight:500}
-.mobile-toggle{display:none;background:none;border:none;color:#94a3b8;padding:4px;cursor:pointer}
-.mobile-toggle:hover{color:#e2e8f0}
+.demo-badge{font-size:10px;padding:3px 10px;border-radius:9999px;background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.25);font-weight:500}
+.mobile-toggle{display:none;background:none;border:none;color:rgba(0,0,0,0.5);padding:4px;cursor:pointer}
+.mobile-toggle:hover{color:rgba(0,0,0,0.9)}
 
 /* ── Mobile nav dropdown ─────────────────────────────────── */
-.mobile-nav{display:none;border-top:1px solid rgba(255,255,255,0.1);background:rgba(15,23,42,0.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
+.mobile-nav{display:none;border-top:1px solid rgba(0,0,0,0.08);background:rgba(255,255,255,0.95);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
 .mobile-nav.open{display:block}
-.mobile-nav-link{display:block;width:100%;text-align:left;padding:10px 16px;font-size:0.875rem;font-weight:500;border-radius:8px;cursor:pointer;background:none;border:none;transition:all 0.15s;color:#94a3b8}
-.mobile-nav-link:hover{background:rgba(255,255,255,0.05);color:#e2e8f0}
-.mobile-nav-link.active{color:#818cf8;background:rgba(99,102,241,0.1)}
+.mobile-nav-link{display:block;width:100%;text-align:left;padding:10px 16px;font-size:0.875rem;font-weight:500;border-radius:8px;cursor:pointer;background:none;border:none;transition:all 0.15s;color:rgba(0,0,0,0.5)}
+.mobile-nav-link:hover{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.9)}
+.mobile-nav-link.active{color:rgba(0,0,0,0.85);background:rgba(0,0,0,0.1)}
 
 /* ── Main content ────────────────────────────────────────── */
 main{flex:1}
 
 /* ── Footer ──────────────────────────────────────────────── */
-.footer{border-top:1px solid rgba(255,255,255,0.1);padding:16px 0;text-align:center;font-size:0.75rem;color:#64748b;margin-top:auto}
+.footer{border-top:1px solid rgba(0,0,0,0.1);padding:16px 0;text-align:center;font-size:0.75rem;color:rgba(0,0,0,0.4);margin-top:auto}
 
 /* ── Animations ──────────────────────────────────────────── */
 @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes scaleIn{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
-@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(99,102,241,0.5)}70%{box-shadow:0 0 0 18px rgba(99,102,241,0)}100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(0,0,0,0.3)}70%{box-shadow:0 0 0 18px rgba(0,0,0,0)}100%{box-shadow:0 0 0 0 rgba(0,0,0,0)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes growWidth{from{width:0}to{width:var(--target-width)}}
 @keyframes ringDraw{from{stroke-dashoffset:var(--ring-circumference)}to{stroke-dashoffset:var(--ring-target)}}
@@ -66,63 +66,63 @@ main{flex:1}
 
 /* ── Card hover ──────────────────────────────────────────── */
 .card-hover{transition:transform 0.2s,box-shadow 0.2s}
-.card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 30px -5px rgba(99,102,241,0.12),0 0 0 1px rgba(99,102,241,0.08)}
+.card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 30px -5px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.05)}
 
 /* ── Glass panels ────────────────────────────────────────── */
-.glass{background:rgba(30,41,59,0.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.08);border-radius:12px}
-.glass-strong{background:rgba(30,41,59,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.12);border-radius:12px}
+.glass{background:rgba(255,255,255,0.7);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(0,0,0,0.05);border-radius:12px}
+.glass-strong{background:rgba(0,0,0,0.03);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(0,0,0,0.08);border-radius:12px}
 
 /* ── Badges ──────────────────────────────────────────────── */
 .badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:9999px;border:1px solid;white-space:nowrap}
-.badge-indigo{background:rgba(99,102,241,0.15);color:#818cf8;border-color:rgba(99,102,241,0.25)}
-.badge-emerald{background:rgba(16,185,129,0.15);color:#34d399;border-color:rgba(16,185,129,0.25)}
-.badge-red{background:rgba(239,68,68,0.15);color:#f87171;border-color:rgba(239,68,68,0.25)}
-.badge-amber{background:rgba(245,158,11,0.15);color:#fbbf24;border-color:rgba(245,158,11,0.25)}
-.badge-violet{background:rgba(139,92,246,0.15);color:#a78bfa;border-color:rgba(139,92,246,0.25)}
-.badge-slate{background:rgba(100,116,139,0.15);color:#94a3b8;border-color:rgba(100,116,139,0.25)}
-.badge-orange{background:rgba(251,146,60,0.15);color:#fb923c;border-color:rgba(251,146,60,0.25)}
-.badge-cyan{background:rgba(6,182,212,0.15);color:#22d3ee;border-color:rgba(6,182,212,0.25)}
+.badge-white{background:rgba(0,0,0,0.06);color:rgba(0,0,0,0.7);border-color:rgba(0,0,0,0.1)}
+.badge-emerald{background:rgba(16,185,129,0.15);color:#16a34a;border-color:rgba(16,185,129,0.25)}
+.badge-red{background:rgba(239,68,68,0.15);color:#dc2626;border-color:rgba(239,68,68,0.25)}
+.badge-amber{background:rgba(245,158,11,0.15);color:#d97706;border-color:rgba(245,158,11,0.25)}
+.badge-light{background:rgba(0,0,0,0.06);color:rgba(0,0,0,0.7);border-color:rgba(0,0,0,0.1)}
+.badge-slate{background:rgba(100,116,139,0.15);color:rgba(0,0,0,0.6);border-color:rgba(100,116,139,0.25)}
+.badge-orange{background:rgba(251,146,60,0.15);color:#ea580c;border-color:rgba(251,146,60,0.25)}
+.badge-cyan{background:rgba(6,182,212,0.15);color:#0891b2;border-color:rgba(6,182,212,0.25)}
 
 /* ── Buttons ─────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:8px;font-size:0.875rem;font-weight:600;transition:all 0.15s;border:none;cursor:pointer;line-height:1.4}
 .btn:disabled{opacity:0.5;cursor:not-allowed}
-.btn-primary{background:#4f46e5;color:#fff}
-.btn-primary:hover:not(:disabled){background:#4338ca}
-.btn-outline{background:transparent;border:1px solid rgba(255,255,255,0.15);color:#cbd5e1}
-.btn-outline:hover:not(:disabled){background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.25)}
-.btn-ghost{background:transparent;color:#94a3b8;padding:8px}
-.btn-ghost:hover{background:rgba(255,255,255,0.1);color:#e2e8f0}
+.btn-primary{background:#000000;color:#fff}
+.btn-primary:hover:not(:disabled){background:#1a1a1a}
+.btn-outline{background:transparent;border:1px solid rgba(0,0,0,0.15);color:rgba(0,0,0,0.5)}
+.btn-outline:hover:not(:disabled){background:rgba(0,0,0,0.05);border-color:rgba(0,0,0,0.25)}
+.btn-ghost{background:transparent;color:rgba(0,0,0,0.5);padding:8px}
+.btn-ghost:hover{background:rgba(0,0,0,0.05);color:rgba(0,0,0,0.9)}
 .btn-lg{padding:14px 32px;font-size:0.95rem;border-radius:8px}
 .btn-sm{padding:6px 14px;font-size:0.8rem}
 
 /* ── Form elements ───────────────────────────────────────── */
 .form-group{display:flex;flex-direction:column;gap:6px}
-.form-label{font-size:0.875rem;color:#cbd5e1;font-weight:500}
-.form-label-hint{font-weight:400;color:#475569}
-.form-input{background:rgba(15,23,42,0.5);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px 12px;font-size:0.875rem;color:#f8fafc;outline:none;transition:border-color 0.15s}
-.form-input:focus{border-color:rgba(99,102,241,0.5)}
-.form-input::placeholder{color:#475569}
+.form-label{font-size:0.875rem;color:rgba(0,0,0,0.75);font-weight:500}
+.form-label-hint{font-weight:400;color:rgba(0,0,0,0.4)}
+.form-input{background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:10px 12px;font-size:0.875rem;color:#000000;outline:none;transition:border-color 0.15s}
+.form-input:focus{border-color:rgba(0,0,0,0.3)}
+.form-input::placeholder{color:rgba(0,0,0,0.4)}
 .form-input:disabled{opacity:0.5;cursor:not-allowed}
 .form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M4.646 5.646a.5.5 0 0 1 .708 0L8 8.293l2.646-2.647a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:36px}
 .textarea{min-height:80px;resize:vertical;font-family:'SF Mono',Monaco,'Cascadia Mono',monospace;font-size:0.8rem}
 .input-with-icon{position:relative}
-.input-with-icon .icon-left{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#64748b;pointer-events:none}
+.input-with-icon .icon-left{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:rgba(0,0,0,0.4);pointer-events:none}
 .input-with-icon .form-input{padding-left:38px}
-.input-error{font-size:0.8rem;color:#f87171}
+.input-error{font-size:0.8rem;color:#dc2626}
 
 /* ── Progress bar ────────────────────────────────────────── */
-.progress-track{height:8px;width:100%;border-radius:9999px;background:rgba(255,255,255,0.05);overflow:hidden}
+.progress-track{height:8px;width:100%;border-radius:9999px;background:rgba(0,0,0,0.06);overflow:hidden}
 .progress-fill{height:100%;border-radius:9999px;transition:width 1s cubic-bezier(0.4,0,0.2,1)}
 
 /* ── Circular progress ring ──────────────────────────────── */
-.ring-track{fill:none;stroke:rgba(255,255,255,0.05);stroke-width:10}
+.ring-track{fill:none;stroke:rgba(0,0,0,0.06);stroke-width:10}
 .ring-progress{fill:none;stroke-width:10;stroke-linecap:round;animation:ringDraw 1.5s cubic-bezier(0.4,0,0.2,1) both;transform:rotate(-90deg);transform-origin:center}
 
 /* ── Accordion ───────────────────────────────────────────── */
-.accordion-item{border-bottom:1px solid rgba(255,255,255,0.05)}
-.accordion-trigger{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 16px;font-size:0.875rem;font-weight:500;color:#f8fafc;cursor:pointer;background:none;border:none;text-align:left;transition:background 0.15s}
-.accordion-trigger:hover{background:rgba(255,255,255,0.03)}
-.accordion-trigger .chevron{transition:transform 0.2s;color:#64748b;flex-shrink:0}
+.accordion-item{border-bottom:1px solid rgba(0,0,0,0.08)}
+.accordion-trigger{display:flex;align-items:center;justify-content:space-between;width:100%;padding:14px 16px;font-size:0.875rem;font-weight:500;color:#000000;cursor:pointer;background:none;border:none;text-align:left;transition:background 0.15s}
+.accordion-trigger:hover{background:rgba(0,0,0,0.03)}
+.accordion-trigger .chevron{transition:transform 0.2s;color:rgba(0,0,0,0.4);flex-shrink:0}
 .accordion-trigger[aria-expanded="true"] .chevron{transform:rotate(180deg)}
 .accordion-content{overflow:hidden;max-height:0;transition:max-height 0.3s ease-out}
 .accordion-content.open{max-height:3000px}
@@ -136,19 +136,19 @@ main{flex:1}
 .chat-msg.user .chat-msg-inner{flex-direction:row}
 .chat-msg.agent .chat-msg-inner{flex-direction:row-reverse}
 .chat-avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.chat-avatar.user-av{background:#475569}
-.chat-avatar.agent-av{background:rgba(99,102,241,0.3)}
-.chat-bubble{border-radius:16px;padding:12px;font-size:0.875rem;color:#e2e8f0;line-height:1.5}
-.chat-msg.user .chat-bubble{background:#334155;border-bottom-left-radius:4px}
-.chat-msg.agent .chat-bubble{background:rgba(49,46,129,0.3);border-bottom-right-radius:4px}
+.chat-avatar.user-av{background:rgba(0,0,0,0.1)}
+.chat-avatar.agent-av{background:rgba(0,0,0,0.06)}
+.chat-bubble{border-radius:16px;padding:12px;font-size:0.875rem;color:rgba(0,0,0,0.9);line-height:1.5}
+.chat-msg.user .chat-bubble{background:rgba(0,0,0,0.06);border-bottom-left-radius:4px}
+.chat-msg.agent .chat-bubble{background:rgba(0,0,0,0.06);border-bottom-right-radius:4px}
 .chat-bubble.pass-border{border-left:2px solid #10b981}
 .chat-bubble.fail-border{border-left:2px solid #ef4444}
-.chat-bubble.error-border{border-left:2px solid #f59e0b}
+.chat-bubble.error-border{border-left:2px solid #d97706}
 
 /* ── Modal / Dialog ──────────────────────────────────────── */
-.modal-overlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity 0.2s}
 .modal-overlay.open{opacity:1;pointer-events:auto}
-.modal-box{background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;width:100%;max-width:672px;max-height:80vh;overflow-y:auto;padding:24px;transform:scale(0.95);transition:transform 0.2s}
+.modal-box{background:rgba(255,255,255,0.95);border:1px solid rgba(0,0,0,0.1);border-radius:12px;width:100%;max-width:672px;max-height:80vh;overflow-y:auto;padding:24px;transform:scale(0.95);transition:transform 0.2s}
 .modal-overlay.open .modal-box{transform:scale(1)}
 
 /* ── Responsive ──────────────────────────────────────────── */
@@ -176,26 +176,582 @@ main{flex:1}
 .text-left{text-align:left}
 .font-mono{font-family:'SF Mono',Monaco,'Cascadia Mono',monospace}
 .truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+
+/* ── View transitions ─────────────────────────────────── */
+.view{animation:viewFadeIn 0.3s ease}
+@keyframes viewFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Staggered entrance ───────────────────────────────── */
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Nav button transitions ───────────────────────────── */
+.nav-link{transition:all 0.2s ease}
+.mobile-nav-link{transition:all 0.2s ease}
+
+/* ── Card hover lift ──────────────────────────────────── */
+.card-hover{transition:transform 0.2s ease,box-shadow 0.2s ease}
+.card-hover:hover{transform:translateY(-2px);box-shadow:0 8px 30px -5px rgba(0,0,0,0.08),0 0 0 1px rgba(0,0,0,0.06)}
+
+/* ── Button press effect ──────────────────────────────── */
+button:active:not(:disabled){transform:scale(0.97)}
+.btn:active:not(:disabled){transform:scale(0.97)}
+
+/* ── Toast notifications ──────────────────────────────── */
+.toast-container{position:fixed;top:1rem;right:1rem;z-index:9999;display:flex;flex-direction:column;gap:0.5rem}
+.toast{background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.1);border-radius:0.75rem;padding:0.75rem 1rem;font-size:0.8125rem;color:#000000;box-shadow:0 8px 24px rgba(0,0,0,0.1);display:flex;align-items:center;gap:0.5rem;opacity:0;transform:translateX(20px);transition:all 0.3s ease;max-width:360px}
+.toast.show{opacity:1;transform:translateX(0)}
+.toast-success{border-left:3px solid #16a34a}
+.toast-error{border-left:3px solid #dc2626}
+.toast-info{border-left:3px solid rgba(0,0,0,0.3)}
+
+/* ── Bot Builder Styles ────────────────────────────── */
+
+:root {
+  --bg: #ffffff;
+  --bg-card: rgba(0,0,0,0.03);
+  --bg-card-hover: rgba(0,0,0,0.06);
+  --border: rgba(0,0,0,0.1);
+  --border-focus: rgba(0,0,0,0.3);
+  --text: #000000;
+  --text-muted: rgba(0,0,0,0.5);
+  --primary: #000000;
+  --primary-hover: #1a1a1a;
+  --primary-dim: rgba(0,0,0,0.08);
+  --green: #16a34a;
+  --amber: #d97706;
+  --rose: #dc2626;
+  --muted: rgba(0,0,0,0.7);
+  --radius: 0.75rem;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+
+/* NAV */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.nav-brand svg{color:#000000}
+.nav-links { display: flex; gap: 0.25rem; }
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: none;
+  white-space: nowrap;
+}
+.nav-link:hover { color: var(--text); background: var(--bg-card); }
+.nav-link.active { color: var(--text); background: var(--primary-dim); }
+.nav-link.active svg{color:#000000}
+
+/* SUB-TABS (Bot Builder uses these) */
+.sub-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+.sub-tab {
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+}
+.sub-tab:hover { color: var(--text); }
+.sub-tab.active{color:#000000;border-bottom-color:#000000}
+.sub-content { display: none; }
+.sub-content.active { display: block; }
+
+/* CARDS */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: all 0.2s;
+}
+.card:hover { border-color: rgba(0,0,0,0.15); }
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+.card-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* BADGES */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.badge-primary{background:rgba(0,0,0,0.08);color:#000000}
+.badge-green { background: rgba(22,163,74,0.15); color: #16a34a; }
+.badge-amber { background: rgba(217,119,6,0.15); color: #d97706; }
+.badge-rose { background: rgba(220,38,38,0.15); color: #dc2626; }
+.badge-light{background:rgba(0,0,0,0.06);color:rgba(0,0,0,0.7)}
+.badge-muted { background: rgba(0,0,0,0.04); color: var(--text-muted); }
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot-red { background: #ef4444; }
+
+/* BUTTONS */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  font-family: var(--font);
+  white-space: nowrap;
+}
+.btn-primary{background:#000000;color:#ffffff}
+.btn-primary:hover{background:#1a1a1a}
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--bg-card); border-color: rgba(0,0,0,0.2); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.375rem 0.75rem;
+}
+.btn-ghost:hover { color: var(--text); background: var(--bg-card); }
+.btn-sm { padding: 0.375rem 0.75rem; font-size: 0.8125rem; }
+.btn-icon {
+  padding: 0.375rem;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+}
+.btn-icon:hover { color: var(--text); background: var(--bg-card); }
+
+/* INPUTS */
+.input, .select-styled, .textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 0.875rem;
+  font-family: var(--font);
+  transition: border-color 0.2s;
+  outline: none;
+}
+.input:focus, .select-styled:focus, .textarea:focus {
+  border-color: var(--border-focus);
+}
+.input-readonly {
+  background: rgba(0,0,0,0.03);
+  color: var(--text-muted);
+  cursor: default;
+}
+.textarea {
+  resize: vertical;
+  min-height: 44px;
+  line-height: 1.5;
+}
+.textarea-mono {
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.8125rem;
+  min-height: 300px;
+  line-height: 1.6;
+}
+
+.select-styled {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='rgba(0,0,0,0.5)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+  cursor: pointer;
+}
+.select-styled option {
+  background: #ffffff;
+  color: var(--text);
+}
+
+/* CHAT */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 260px);
+  min-height: 400px;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem;
+}
+.chat-empty-icon {
+  width: 48px;
+  height: 48px;
+  color: rgba(0,0,0,0.15);
+}
+.chat-empty h3 { font-size: 0.9375rem; font-weight: 500; color: var(--text); }
+.chat-empty p { font-size: 0.8125rem; }
+.msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+}
+.msg-user { align-self: flex-end; align-items: flex-end; }
+.msg-bot { align-self: flex-start; align-items: flex-start; }
+.msg-bubble {
+  padding: 0.625rem 0.875rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+.msg-user .msg-bubble{background:#000000;color:#ffffff;
+  border-bottom-right-radius: 4px;
+}
+.msg-bot .msg-bubble {
+  background: rgba(0,0,0,0.04);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.msg-time {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  padding: 0 0.25rem;
+}
+.chat-input-area {
+  display: flex;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  align-items: flex-end;
+}
+.chat-input-area .textarea {
+  flex: 1;
+  min-height: 44px;
+  max-height: 120px;
+}
+.chat-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  padding: 0.5rem 0;
+  align-self: flex-start;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color:#000000;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* CONFIGURE */
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+.persona-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.75rem;
+}
+.config-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.config-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+.config-stat-label { font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.config-stat-value { font-size: 0.8125rem; font-weight: 500; }
+.prompt-preview {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  max-height: 200px;
+  overflow: hidden;
+  position: relative;
+}
+.prompt-preview::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background:linear-gradient(transparent,#ffffff);
+}
+.prompt-preview.no-fade::after { display: none; }
+.prompt-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+/* TIPS */
+.tips-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.tip-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  transition: all 0.2s;
+}
+.tip-card:hover { border-color: rgba(0,0,0,0.15); }
+.tip-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+.tip-icon-green { background: rgba(34,197,94,0.15); color: #16a34a; }
+.tip-icon-white{background:rgba(0,0,0,0.06);color:rgba(0,0,0,0.7)}
+.tip-icon-amber { background: rgba(245,158,11,0.15); color: #d97706; }
+.tip-icon-rose { background: rgba(244,63,94,0.15); color: #dc2626; }
+.tip-title { font-size: 0.8125rem; font-weight: 600; margin-bottom: 0.25rem; }
+.tip-desc { font-size: 0.75rem; color: var(--text-muted); line-height: 1.5; }
+
+/* DEPLOY */
+.deploy-section { margin-bottom: 1.5rem; }
+.deploy-section .card { margin-bottom: 1rem; }
+.endpoint-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.endpoint-row .input { flex: 1; }
+.code-block {
+  background:rgba(0,0,0,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.875rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.8125rem;
+  color: #374151;
+  overflow-x: auto;
+  margin-top: 0.75rem;
+  line-height: 1.6;
+}
+.code-block + .code-block { margin-top: 0.5rem; }
+.steps { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem; }
+.step {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.step-num{width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,0.06);color:#000000;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0}
+.step-text { font-size: 0.8125rem; color: var(--text-muted); line-height: 1.5; }
+.step-text a { color: var(--primary-hover); text-decoration: none; }
+.step-text a:hover { text-decoration: underline; }
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.health-stat {
+  text-align: center;
+}
+.health-stat-label { font-size: 0.6875rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+.health-stat-value { font-size: 1.25rem; font-weight: 700; }
+
+/* WARNING BANNER */
+.warning-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: var(--radius);
+  margin-bottom: 1.25rem;
+  font-size: 0.8125rem;
+  color: #d97706;
+}
+.warning-banner svg { flex-shrink: 0; }
+
+/* TOAST */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.toast {
+  background: rgba(0,0,0,0.03);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.3s ease;
+  max-width: 360px;
+}
+.toast.show { opacity: 1; transform: translateX(0); }
+.toast-success { border-left: 3px solid var(--green); }
+.toast-error { border-left: 3px solid var(--rose); }
+.toast-info{border-left:3px solid rgba(0,0,0,0.3)}
+
+
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .config-grid { grid-template-columns: 1fr; }
+  .tips-grid { grid-template-columns: repeat(2, 1fr); }
+  .health-grid { grid-template-columns: 1fr; }
+  .nav-links { gap: 0; }
+  .nav-link span { display: none; }
+  .msg { max-width: 90%; }
+  .chat-container { height: calc(100vh - 280px); }
+}
+@media (max-width: 480px) {
+  .tips-grid { grid-template-columns: 1fr; }
+}
+
 </style>
 </head>
 <body>
+
+
 
 <!-- ═══════════════ NAVIGATION ═══════════════ -->
 <nav class="nav">
   <div class="nav-inner">
     <div class="nav-logo" onclick="navigate('home')">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"/><path d="M16 14h.01"/><path d="M8 14h.01"/><path d="M12 18v4"/><path d="M8 22h8"/><path d="M5 12a7 7 0 0 0 14 0"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path><path d="M16 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18v4"></path><path d="M8 22h8"></path><path d="M5 12a7 7 0 0 0 14 0"></path></svg>
       <span>Persona-Bench</span>
     </div>
     <div class="nav-links">
       <button class="nav-link" data-nav="home" onclick="navigate('home')">Evaluate</button>
-      <button class="nav-link" data-nav="leaderboard" onclick="navigate('leaderboard')">Leaderboard</button>
+      <button class="nav-link" data-nav="bot" onclick="navigate('bot')">Bot Builder</button>
     </div>
     <div class="nav-right">
       <span class="demo-badge">Demo Mode</span>
       <button class="mobile-toggle" onclick="toggleMobileNav()" aria-label="Toggle navigation menu">
-        <svg id="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
-        <svg id="close-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg id="menu-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
+        <svg id="close-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="display:none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
     </div>
   </div>
@@ -203,7 +759,7 @@ main{flex:1}
 <div id="mobile-nav" class="mobile-nav">
   <div style="padding:12px 16px">
     <button class="mobile-nav-link" data-nav="home" onclick="navigate('home');closeMobileNav()">Evaluate</button>
-    <button class="mobile-nav-link" data-nav="leaderboard" onclick="navigate('leaderboard');closeMobileNav()">Leaderboard</button>
+    <button class="mobile-nav-link" data-nav="bot" onclick="navigate('bot');closeMobileNav()">Bot Builder</button>
   </div>
 </div>
 
@@ -213,35 +769,31 @@ main{flex:1}
   <div id="view-home" class="view">
     <!-- Hero -->
     <section style="max-width:768px;margin:0 auto;padding:64px 16px 40px;text-align:center" class="anim-fade">
-      <h1 class="hero-title" style="font-size:3.25rem;font-weight:800;color:#f8fafc;letter-spacing:-0.025em;line-height:1.1">
+      <h1 class="hero-title" style="font-size:3.25rem;font-weight:800;color:#000000;letter-spacing:-0.025em;line-height:1.1">
         Is Your AI Agent Ready for Real Humans?
       </h1>
-      <p style="font-size:1.125rem;color:#94a3b8;margin-top:16px;line-height:1.6" class="anim-fade-s1">
+      <p style="font-size:1.125rem;color:rgba(0,0,0,0.5);margin-top:16px;line-height:1.6" class="anim-fade-s1">
         Evaluate your chatbot against realistic personas with multi-judge scoring.
       </p>
-      <div class="hero-btns" style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:32px;flex-wrap:wrap" class="anim-fade-s2">
+      <div class="hero-btns" style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:32px;flex-wrap:wrap">
         <button class="btn btn-primary btn-lg" onclick="document.getElementById('eval-form').scrollIntoView({behavior:'smooth'})">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
           Test My Agent
-        </button>
-        <button class="btn btn-outline btn-lg" onclick="navigate('leaderboard')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>
-          View Leaderboard
         </button>
       </div>
     </section>
 
     <!-- Evaluation Form -->
     <section style="max-width:672px;margin:0 auto;padding:0 16px 64px" class="anim-fade-s3">
-      <div id="eval-form" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:32px;box-shadow:0 8px 30px -5px rgba(99,102,241,0.1)">
-        <h2 style="font-size:1.25rem;font-weight:600;color:#f8fafc;margin-bottom:24px">Configure Your Agent Test</h2>
+      <div id="eval-form" style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:32px;box-shadow:0 8px 30px -5px rgba(0,0,0,0.05)">
+        <h2 style="font-size:1.25rem;font-weight:600;color:#000000;margin-bottom:24px">Configure Your Agent Test</h2>
         <form id="eval-form-el" style="display:flex;flex-direction:column;gap:20px">
           <!-- Endpoint URL -->
           <div class="form-group">
             <label class="form-label" for="endpoint-url">Endpoint URL</label>
             <div class="input-with-icon">
-              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-              <input class="form-input" type="url" id="endpoint-url" placeholder="https://api.example.com/chat" required />
+              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+              <input class="form-input" type="url" id="endpoint-url" placeholder="https://api.example.com/chat" required="">
             </div>
             <span id="url-error" class="input-error" style="display:none"></span>
           </div>
@@ -250,8 +802,8 @@ main{flex:1}
           <div class="form-group">
             <label class="form-label" for="api-key">API Key <span class="form-label-hint">(optional)</span></label>
             <div class="input-with-icon">
-              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              <input class="form-input" type="password" id="api-key" placeholder="sk-..." />
+              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+              <input class="form-input" type="password" id="api-key" placeholder="sk-...">
             </div>
           </div>
 
@@ -259,19 +811,15 @@ main{flex:1}
           <div class="form-group">
             <label class="form-label" for="niche-select">Industry / Niche</label>
             <div class="input-with-icon">
-              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4v2a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4z"/></svg>
-              <select class="form-input form-select" id="niche-select">
-                <option value="">Loading niches...</option>
-              </select>
+              <svg class="icon-left" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a4 4 0 0 0-4 4v2a4 4 0 0 0 8 0V7a4 4 0 0 0-4-4z"></path></svg>
+              <select class="form-input form-select" id="niche-select"><option value="general">General / Customer Support</option><option value="customer_support">Customer Support</option><option value="healthcare">Healthcare</option><option value="e_commerce">E-Commerce</option><option value="legal">Legal</option><option value="education">Education (AI-generated)</option><option value="finance">Finance (AI-generated)</option><option value="real_estate">Real Estate (AI-generated)</option><option value="travel">Travel (AI-generated)</option><option value="food_service">Food Service (AI-generated)</option></select>
             </div>
           </div>
 
           <!-- Persona -->
           <div class="form-group">
             <label class="form-label" for="persona-select">Persona</label>
-            <select class="form-input form-select" id="persona-select">
-              <option value="__all__">All Personas</option>
-            </select>
+            <select class="form-input form-select" id="persona-select"><option value="__all__">All Personas (4)</option><option value="adversarial">Adversarial Tester</option><option value="confused_newbie">Confused First-Timer</option><option value="topic_switcher">Topic Switcher</option><option value="impatient_task_focused">Impatient Task-Focused User</option></select>
           </div>
 
           <!-- API Format -->
@@ -287,50 +835,50 @@ main{flex:1}
           <!-- Request Body Template -->
           <div class="form-group">
             <label class="form-label" for="body-template">Request Body Template</label>
-            <textarea class="form-input textarea" id="body-template" disabled placeholder='{"messages": {{history}}}'></textarea>
+            <textarea class="form-input textarea" id="body-template" disabled="" placeholder="{&quot;messages&quot;: {{history}}}"></textarea>
           </div>
 
           <!-- Response Path -->
           <div class="form-group">
             <label class="form-label" for="response-path">Response Path</label>
-            <input class="form-input font-mono" id="response-path" disabled placeholder="choices.0.message.content" style="font-size:0.8rem" />
+            <input class="form-input font-mono" id="response-path" disabled="" placeholder="choices.0.message.content" style="font-size:0.8rem">
           </div>
 
           <!-- Advanced Options -->
           <div>
-            <button type="button" class="flex items-center gap-2 text-sm" style="color:#94a3b8;padding:4px 0" onclick="toggleAdvanced()">
-              <svg id="adv-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><path d="m6 9 6 6 6-6"/></svg>
+            <button type="button" class="flex items-center gap-2 text-sm" style="color:rgba(0,0,0,0.5);padding:4px 0" onclick="toggleAdvanced()">
+              <svg id="adv-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s"><path d="m6 9 6 6 6-6"></path></svg>
               Advanced Options
             </button>
             <div id="advanced-section" style="display:none;padding-top:12px">
               <div class="form-group">
                 <label class="form-label" for="extra-headers">Extra Headers</label>
-                <textarea class="form-input textarea" id="extra-headers" placeholder='{"X-Custom-Header": "value"}' style="min-height:60px"></textarea>
+                <textarea class="form-input textarea" id="extra-headers" placeholder="{&quot;X-Custom-Header&quot;: &quot;value&quot;}" style="min-height:60px"></textarea>
               </div>
             </div>
           </div>
 
           <!-- Ensemble Toggle -->
-          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(15,23,42,0.3);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:16px">
             <div>
               <label class="form-label" for="ensemble-toggle" style="cursor:pointer">Multi-Judge Ensemble</label>
-              <p style="font-size:0.75rem;color:#64748b;margin-top:2px">(Safety, Persona, Business, Quality)</p>
+              <p style="font-size:0.75rem;color:rgba(0,0,0,0.4);margin-top:2px">(Safety, Persona, Business, Quality)</p>
             </div>
             <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
-              <input type="checkbox" id="ensemble-toggle" checked style="opacity:0;width:0;height:0" />
-              <span id="switch-track" style="position:absolute;inset:0;background:#6366f1;border-radius:9999px;transition:background 0.2s"></span>
+              <input type="checkbox" id="ensemble-toggle" checked="" style="opacity:0;width:0;height:0">
+              <span id="switch-track" style="position:absolute;inset:0;background:#000000;border-radius:9999px;transition:background 0.2s"></span>
               <span id="switch-thumb" style="position:absolute;top:2px;left:22px;width:20px;height:20px;background:#fff;border-radius:50%;transition:left 0.2s"></span>
             </label>
           </div>
 
           <!-- Submit -->
-          <button type="submit" class="btn btn-primary" id="launch-btn" disabled style="padding:14px 32px;font-size:0.95rem">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+          <button type="submit" class="btn btn-primary" id="launch-btn" disabled="" style="padding:14px 32px;font-size:0.95rem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"></path><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path></svg>
             Launch Evaluation
           </button>
 
-          <p style="font-size:0.75rem;color:#64748b;text-align:center;margin-top:4px">
-            Takes ~30 seconds &bull; Multi-judge ensemble &bull; Niche-specific scenarios
+          <p style="font-size:0.75rem;color:rgba(0,0,0,0.4);text-align:center;margin-top:4px">
+            Takes ~30 seconds • Multi-judge ensemble • Niche-specific scenarios
           </p>
         </form>
       </div>
@@ -338,28 +886,28 @@ main{flex:1}
 
     <!-- How It Works -->
     <section style="max-width:896px;margin:0 auto;padding:0 16px 64px">
-      <h2 style="font-size:1.5rem;font-weight:700;color:#f8fafc;text-align:center;margin-bottom:48px">How It Works</h2>
+      <h2 style="font-size:1.5rem;font-weight:700;color:#000000;text-align:center;margin-bottom:48px">How It Works</h2>
       <div class="how-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px">
-        <div class="card-hover" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center">
-          <div style="width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v6l3 7H6l3-7V3Z"/><path d="M6 16h12"/><path d="M8 19h8"/></svg>
+        <div class="card-hover" style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:24px;text-align:center">
+          <div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v6l3 7H6l3-7V3Z"></path><path d="M6 16h12"></path><path d="M8 19h8"></path></svg>
           </div>
-          <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc;margin-bottom:8px">Pick Your Niche</h3>
-          <p style="font-size:0.875rem;color:#94a3b8;line-height:1.5">Choose from 10 industries. Each niche has tailored personas and evaluation criteria.</p>
+          <h3 style="font-size:1.125rem;font-weight:600;color:#000000;margin-bottom:8px">Pick Your Niche</h3>
+          <p style="font-size:0.875rem;color:rgba(0,0,0,0.5);line-height:1.5">Choose from 10 industries. Each niche has tailored personas and evaluation criteria.</p>
         </div>
-        <div class="card-hover" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center">
-          <div style="width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <div class="card-hover" style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:24px;text-align:center">
+          <div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
           </div>
-          <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc;margin-bottom:8px">Face the Personas</h3>
-          <p style="font-size:0.875rem;color:#94a3b8;line-height:1.5">Your agent is tested against adversarial personas that push boundaries.</p>
+          <h3 style="font-size:1.125rem;font-weight:600;color:#000000;margin-bottom:8px">Face the Personas</h3>
+          <p style="font-size:0.875rem;color:rgba(0,0,0,0.5);line-height:1.5">Your agent is tested against adversarial personas that push boundaries.</p>
         </div>
-        <div class="card-hover" style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:24px;text-align:center">
-          <div style="width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+        <div class="card-hover" style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:24px;text-align:center">
+          <div style="width:48px;height:48px;border-radius:50%;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
           </div>
-          <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc;margin-bottom:8px">Get Your Report</h3>
-          <p style="font-size:0.875rem;color:#94a3b8;line-height:1.5">Receive a detailed multi-judge analysis with actionable improvements.</p>
+          <h3 style="font-size:1.125rem;font-weight:600;color:#000000;margin-bottom:8px">Get Your Report</h3>
+          <p style="font-size:0.875rem;color:rgba(0,0,0,0.5);line-height:1.5">Receive a detailed multi-judge analysis with actionable improvements.</p>
         </div>
       </div>
     </section>
@@ -367,14 +915,14 @@ main{flex:1}
 
   <!-- LOADING VIEW -->
   <div id="view-loading" class="view" style="display:none">
-    <div style="position:fixed;inset:0;z-index:50;background:rgba(15,23,42,0.9);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">
+    <div style="position:fixed;inset:0;z-index:50;background:rgba(255,255,255,0.9);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center">
       <div style="max-width:448px;width:100%;margin:0 16px;text-align:center" class="anim-scale">
         <div style="display:flex;justify-content:center">
-          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:pulseRing 1.5s infinite"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"/><path d="M16 14h.01"/><path d="M8 14h.01"/><path d="M12 18v4"/><path d="M8 22h8"/><path d="M5 12a7 7 0 0 0 14 0"/></svg>
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:pulseRing 1.5s infinite"><path d="M12 2a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4Z"></path><path d="M16 14h.01"></path><path d="M8 14h.01"></path><path d="M12 18v4"></path><path d="M8 22h8"></path><path d="M5 12a7 7 0 0 0 14 0"></path></svg>
         </div>
-        <h2 style="font-size:1.5rem;font-weight:700;color:#f8fafc;margin-top:24px">Evaluating Your Agent</h2>
+        <h2 style="font-size:1.5rem;font-weight:700;color:#000000;margin-top:24px">Evaluating Your Agent</h2>
         <div style="display:flex;justify-content:center;margin-top:12px">
-          <span class="badge badge-indigo" id="loading-niche-badge">Niche</span>
+          <span class="badge badge-white" id="loading-niche-badge">Niche</span>
         </div>
         <div style="margin-top:32px;text-align:left;display:flex;flex-direction:column;gap:16px" id="loading-steps"></div>
         <button class="btn btn-outline" style="margin-top:32px" onclick="cancelLoading()">Cancel</button>
@@ -389,17 +937,17 @@ main{flex:1}
       <section class="anim-fade" style="padding:24px 0 16px">
         <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
           <button class="btn btn-ghost" onclick="navigate('home')" style="padding:8px;flex-shrink:0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
           </button>
           <div style="display:flex;align-items:center;gap:6px;font-size:0.875rem">
-            <a href="#" onclick="navigate('home');return false" style="color:#818cf8">Home</a>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            <span style="color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="report-breadcrumb">Report</span>
+            <a href="#" onclick="navigate('home');return false" style="color:rgba(0,0,0,0.85)">Home</a>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
+            <span style="color:rgba(0,0,0,0.4);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="report-breadcrumb">Report</span>
           </div>
           <div style="flex:1"></div>
-          <span class="badge badge-indigo" id="report-niche-badge" style="font-size:0.8rem;padding:4px 12px;border-radius:8px">Niche</span>
-          <span class="badge badge-violet" id="report-ensemble-badge" style="display:none;font-size:0.75rem;padding:3px 10px;border-radius:6px">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
+          <span class="badge badge-white" id="report-niche-badge" style="font-size:0.8rem;padding:4px 12px;border-radius:8px">Niche</span>
+          <span class="badge badge-light" id="report-ensemble-badge" style="display:none;font-size:0.75rem;padding:3px 10px;border-radius:6px">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></svg>
             Multi-Judge Ensemble
           </span>
         </div>
@@ -411,13 +959,13 @@ main{flex:1}
           <div style="position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:16px">
             <svg id="score-ring" width="220" height="220" viewBox="0 0 220 220"></svg>
             <div style="position:absolute;display:flex;align-items:center;justify-content:center">
-              <span id="score-display" style="font-size:3.75rem;font-weight:700;color:#f8fafc;font-variant-numeric:tabular-nums">0.0<span style="font-size:0.875rem;font-weight:400;color:#64748b">/10</span></span>
+              <span id="score-display" style="font-size:3.75rem;font-weight:700;color:#000000;font-variant-numeric:tabular-nums">0.0<span style="font-size:0.875rem;font-weight:400;color:rgba(0,0,0,0.4)">/10</span></span>
             </div>
           </div>
           <span class="badge" id="risk-badge">RISK</span>
-          <div id="deploy-banner" style="width:100%;max-width:32rem;background:#1e293b;border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;margin-top:16px;border-left:4px solid">
+          <div id="deploy-banner" style="width:100%;max-width:32rem;background:rgba(0,0,0,0.02);border-radius:12px;padding:16px;display:flex;align-items:center;gap:12px;margin-top:16px;border-left:4px solid">
             <span id="deploy-icon"></span>
-            <span style="font-size:0.875rem;font-weight:500;color:#e2e8f0" id="deploy-text"></span>
+            <span style="font-size:0.875rem;font-weight:500;color:rgba(0,0,0,0.9)" id="deploy-text"></span>
           </div>
         </div>
       </section>
@@ -425,8 +973,8 @@ main{flex:1}
       <!-- Multi-Judge Ensemble -->
       <section id="ensemble-section" class="anim-fade-s2" style="display:none;margin-top:8px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path d="M7 21h10"/><path d="M12 3v18"/><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg>
-          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Multi-Judge Analysis</h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"></path><path d="M7 21h10"></path><path d="M12 3v18"></path><path d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"></path></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#000000">Multi-Judge Analysis</h2>
         </div>
         <div class="judge-grid" id="judge-cards" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px"></div>
         <div id="ensemble-verdict" class="glass-strong card-hover" style="padding:24px;margin-top:8px;display:none"></div>
@@ -435,8 +983,8 @@ main{flex:1}
       <!-- Radar Chart Section -->
       <section id="radar-section" class="anim-fade-s3" style="display:none;margin-top:32px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
-          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Dimension Analysis</h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#000000">Dimension Analysis</h2>
         </div>
         <div class="radar-grid" id="radar-charts" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px"></div>
       </section>
@@ -450,26 +998,26 @@ main{flex:1}
       <section id="exec-summary-section" class="anim-fade-s3" style="display:none;margin-top:32px">
         <div class="glass card-hover" style="padding:24px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-            <h2 style="font-size:1.125rem;font-weight:700;color:#f8fafc">Executive Summary</h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 9H8"></path><path d="M16 13H8"></path><path d="M16 17H8"></path></svg>
+            <h2 style="font-size:1.125rem;font-weight:700;color:#000000">Executive Summary</h2>
           </div>
-          <p id="exec-summary-text" style="font-size:0.875rem;color:#cbd5e1;line-height:1.7"></p>
+          <p id="exec-summary-text" style="font-size:0.875rem;color:rgba(0,0,0,0.75);line-height:1.7"></p>
         </div>
       </section>
 
       <!-- Key Strengths + Critical Gaps -->
       <section id="strengths-gaps-section" class="anim-fade-s4" style="display:none;margin-top:32px">
         <div class="report-grid-2" style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
-          <div id="strengths-card" class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05);border-top:2px solid #10b981;display:none">
-            <h3 style="font-size:0.875rem;font-weight:700;color:#34d399;margin-bottom:16px;display:flex;align-items:center;gap:8px">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+          <div id="strengths-card" class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:20px;border:1px solid rgba(0,0,0,0.08);border-top:2px solid #10b981;display:none">
+            <h3 style="font-size:0.875rem;font-weight:700;color:#16a34a;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="m9 11 3 3L22 4"></path></svg>
               Key Strengths
             </h3>
             <div id="strengths-list" style="display:flex;flex-direction:column;gap:12px"></div>
           </div>
-          <div id="gaps-card" class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(239,68,68,0.2);border-top:2px solid #ef4444;display:none">
-            <h3 style="font-size:0.875rem;font-weight:700;color:#f87171;margin-bottom:16px;display:flex;align-items:center;gap:8px">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <div id="gaps-card" class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:20px;border:1px solid rgba(239,68,68,0.2);border-top:2px solid #ef4444;display:none">
+            <h3 style="font-size:0.875rem;font-weight:700;color:#dc2626;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
               Critical Gaps
             </h3>
             <div id="gaps-list" style="display:flex;flex-direction:column;gap:12px"></div>
@@ -480,10 +1028,10 @@ main{flex:1}
       <!-- Conversation Viewer -->
       <section id="conversations-section" class="anim-fade-s4" style="display:none;margin-top:32px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Conversation Transcripts</h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#000000">Conversation Transcripts</h2>
         </div>
-        <div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:16px;max-height:600px;overflow-y:auto">
+        <div style="background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.08);padding:16px;max-height:600px;overflow-y:auto">
           <div id="conversations-list"></div>
         </div>
       </section>
@@ -492,8 +1040,8 @@ main{flex:1}
       <section id="flaws-section" class="anim-fade-s5" style="display:none;margin-top:32px">
         <div style="border-left:4px solid #ef4444;background:rgba(239,68,68,0.05);border-radius:0 12px 12px 0;padding:20px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-            <h2 style="font-size:1.125rem;font-weight:700;color:#f87171">Critical Flaws Detected</h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+            <h2 style="font-size:1.125rem;font-weight:700;color:#dc2626">Critical Flaws Detected</h2>
           </div>
           <div id="flaws-list" style="display:flex;flex-direction:column;gap:16px"></div>
         </div>
@@ -502,10 +1050,10 @@ main{flex:1}
       <!-- Action Items -->
       <section id="actions-section" class="anim-fade-s5" style="display:none;margin-top:32px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
-          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Action Items</h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#000000">Action Items</h2>
         </div>
-        <div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:20px;display:flex;flex-direction:column;gap:16px">
+        <div style="background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.08);padding:20px;display:flex;flex-direction:column;gap:16px">
           <div id="actions-list"></div>
         </div>
       </section>
@@ -513,10 +1061,10 @@ main{flex:1}
       <!-- Risk Assessment -->
       <section id="risks-section" class="anim-fade-s5" style="display:none;margin-top:32px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
-          <h2 style="font-size:1.25rem;font-weight:700;color:#f8fafc">Risk Assessment</h2>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><path d="M12 9v4"></path><path d="M12 17h.01"></path></svg>
+          <h2 style="font-size:1.25rem;font-weight:700;color:#000000">Risk Assessment</h2>
         </div>
-        <div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:20px">
+        <div style="background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.08);padding:20px">
           <div id="risks-list" style="display:flex;flex-direction:column;gap:12px"></div>
         </div>
       </section>
@@ -524,27 +1072,27 @@ main{flex:1}
       <!-- Prompt Optimizer -->
       <section class="anim-fade-s6 no-print" style="margin-top:32px">
         <button class="btn btn-primary btn-lg" id="optimize-btn" onclick="handleOptimizePrompt()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"></path><path d="m14 7 3 3"></path><path d="M5 6v4"></path><path d="M19 14v4"></path><path d="M10 2v2"></path><path d="M7 8H3"></path><path d="M21 16h-4"></path><path d="M11 3H9"></path></svg>
           Generate Improved System Prompt
         </button>
       </section>
 
       <!-- Share Section -->
       <section class="anim-fade-s6 no-print" style="margin-top:32px">
-        <div class="card-hover" style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.05);padding:20px">
+        <div class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.08);padding:20px">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-            <h2 style="font-size:1.125rem;font-weight:700;color:#f8fafc">Share Report</h2>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            <h2 style="font-size:1.125rem;font-weight:700;color:#000000">Share Report</h2>
           </div>
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-            <input class="form-input font-mono" id="share-url" readonly style="flex:1;min-width:200px;font-size:0.8rem" />
+            <input class="form-input font-mono" id="share-url" readonly="" style="flex:1;min-width:200px;font-size:0.8rem">
             <div style="display:flex;gap:8px">
               <button class="btn btn-outline btn-sm" id="copy-url-btn" onclick="copyShareUrl()">
-                <svg id="copy-url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <svg id="copy-url-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
                 <span id="copy-url-text">Copy</span>
               </button>
               <button class="btn btn-outline btn-sm" onclick="window.print()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect width="12" height="8" x="6" y="14"></rect></svg>
                 PDF
               </button>
             </div>
@@ -557,28 +1105,255 @@ main{flex:1}
   <!-- ERROR VIEW -->
   <div id="view-error" class="view" style="display:none">
     <div class="anim-fade" style="max-width:448px;margin:80px auto 0;padding:0 16px">
-      <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:32px;text-align:center">
+      <div style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.1);border-radius:12px;padding:32px;text-align:center">
         <div style="display:flex;justify-content:center">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
         </div>
-        <h2 style="font-size:1.25rem;font-weight:600;color:#f8fafc;margin-top:16px">Something went wrong.</h2>
-        <p id="error-message" style="color:#94a3b8;font-size:0.875rem;margin-top:8px"></p>
-        <button class="btn btn-outline" style="margin-top:24px;border-color:rgba(99,102,241,0.3);color:#818cf8" onclick="navigate('home')">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+        <h2 style="font-size:1.25rem;font-weight:600;color:#000000;margin-top:16px">Something went wrong.</h2>
+        <p id="error-message" style="color:rgba(0,0,0,0.5);font-size:0.875rem;margin-top:8px"></p>
+        <button class="btn btn-outline" style="margin-top:24px;border-color:rgba(0,0,0,0.15);color:rgba(0,0,0,0.85)" onclick="navigate('home')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"></path><path d="M19 12H5"></path></svg>
           Go Back Home
         </button>
       </div>
     </div>
   </div>
 
-  <!-- LEADERBOARD VIEW -->
-  <div id="view-leaderboard" class="view" style="display:none">
-    <div class="anim-fade" style="max-width:896px;margin:0 auto;padding:64px 16px;text-align:center">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(99,102,241,0.1);display:flex;align-items:center;justify-content:center;margin:0 auto 24px;font-size:2rem">&#127942;</div>
-      <h2 style="font-size:1.875rem;font-weight:700;color:#f8fafc;margin-bottom:12px">Leaderboard</h2>
-      <p style="color:#94a3b8;margin-bottom:32px">Compare agent performance across industries. Coming soon &mdash; run an evaluation to see your scores here.</p>
-      <div style="background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:48px">
-        <p style="color:#64748b;font-size:0.875rem">No evaluations recorded yet.</p>
+  <!-- BOT BUILDER VIEW -->
+  <div id="view-bot" class="view" style="display:none">
+    <div style="max-width:1200px;margin:0 auto;padding:1.5rem 1rem">
+      <div id="bot-content">
+      
+        <!-- Warning Banner (shown when offline) -->
+        <div class="warning-banner" id="offline-banner" style="display:none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+          Bot service is not running. Add the bot backend to your server to enable this feature.
+        </div>
+      
+        <!-- Sub-tabs -->
+        <div class="sub-tabs">
+          <button class="sub-tab active" data-tab="chat" onclick="switchSubTab('chat')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Chat
+          </button>
+          <button class="sub-tab" data-tab="configure" onclick="switchSubTab('configure')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            Configure
+          </button>
+          <button class="sub-tab" data-tab="deploy" onclick="switchSubTab('deploy')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:-2px;margin-right:4px"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+            Deploy
+          </button>
+        </div>
+      
+        <!-- SUB-TAB: CHAT -->
+        <div class="sub-content active" id="subtab-chat">
+          <div class="card">
+            <div class="card-header">
+              <div style="display:flex;align-items:center;gap:0.75rem">
+                <div class="card-title">Live Chat Preview</div>
+                <span class="badge badge-green" id="chat-status-badge">
+                  <span class="dot dot-green" id="status-dot"></span>
+                  <span id="status-text">Connected</span>
+                </span>
+                <span class="badge badge-primary" id="niche-badge">💬 General</span>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="clearChat()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                Clear
+              </button>
+            </div>
+            <div class="chat-container">
+              <div class="chat-messages" id="chat-messages">
+                <!-- empty state or messages -->
+              </div>
+              <div class="chat-loading" id="chat-loading" style="display:none">
+                <div class="spinner"></div>
+                Bot is thinking...
+              </div>
+              <div class="chat-input-area">
+                <textarea class="textarea" id="chat-input" placeholder="Type a message... (Enter to send, Shift+Enter for newline)" rows="1" onkeydown="handleChatKey(event)"></textarea>
+                <button class="btn btn-primary btn-icon" onclick="sendMessage()" id="send-btn" title="Send">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      
+        <!-- SUB-TAB: CONFIGURE -->
+        <div class="sub-content" id="subtab-configure">
+          <div class="config-grid">
+            <!-- Left: Niche Selection -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:0.75rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                Niche Selection
+              </div>
+              <select class="select-styled" id="niche-select" onchange="handleNicheChange(this.value)"></select>
+              <div class="persona-list" id="persona-list"></div>
+              <div class="config-stats" id="config-stats">
+                <div class="config-stat">
+                  <span class="config-stat-label">Niche</span>
+                  <span class="config-stat-value" id="stat-niche">General / Customer Support</span>
+                </div>
+                <div class="config-stat">
+                  <span class="config-stat-label">Prompt Length</span>
+                  <span class="config-stat-value" id="stat-prompt-len">0 chars</span>
+                </div>
+                <div class="config-stat">
+                  <span class="config-stat-label">Model</span>
+                  <span class="config-stat-value" id="stat-model">default</span>
+                </div>
+              </div>
+            </div>
+      
+            <!-- Right: System Prompt -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                  System Prompt
+                </div>
+                <button class="btn btn-ghost btn-sm" id="toggle-editor-btn" onclick="togglePromptEditor()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="toggle-icon"><path d="m9 9 5 12 1.8-5.2L21 14Z"/></svg>
+                  <span id="toggle-text">Show editor</span>
+                </button>
+              </div>
+              <div id="prompt-preview-area">
+                <div class="prompt-preview" id="prompt-preview">No prompt loaded yet.</div>
+              </div>
+              <div id="prompt-editor-area" style="display:none">
+                <textarea class="textarea textarea-mono" id="prompt-editor" placeholder="System prompt will appear here..."></textarea>
+              </div>
+              <div class="prompt-actions" id="prompt-actions" style="display:none">
+                <button class="btn btn-secondary btn-sm" onclick="resetPrompt()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  Reset
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="savePrompt()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+      
+          <!-- Tips -->
+          <div style="margin-bottom:0.5rem">
+            <div class="card-title" style="margin-bottom:0.75rem">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+              Tips for Optimizing Your Bot
+            </div>
+          </div>
+          <div class="tips-grid">
+            <div class="tip-card">
+              <div class="tip-icon tip-icon-green">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+              </div>
+              <div class="tip-title">Safety</div>
+              <div class="tip-desc">Set clear boundaries for what your bot can and cannot do. This improves safety scores.</div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon tip-icon-white">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+              </div>
+              <div class="tip-title">Persona</div>
+              <div class="tip-desc">Stay in character consistently. Your bot's persona should be reflected in every response.</div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon tip-icon-amber">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              </div>
+              <div class="tip-title">Business</div>
+              <div class="tip-desc">Resolve issues efficiently. Focus on helping users complete their goals quickly.</div>
+            </div>
+            <div class="tip-card">
+              <div class="tip-icon tip-icon-rose">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z"/></svg>
+              </div>
+              <div class="tip-title">Quality</div>
+              <div class="tip-desc">Be concise yet helpful. Long rambling responses score lower than focused ones.</div>
+            </div>
+          </div>
+        </div>
+      
+        <!-- SUB-TAB: DEPLOY -->
+        <div class="sub-content" id="subtab-deploy">
+          <div class="deploy-section">
+            <!-- Endpoint URL -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:0.75rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Endpoint URL
+              </div>
+              <div class="endpoint-row">
+                <input type="text" class="input input-readonly" id="bot-endpoint-url" readonly>
+                <button class="btn btn-secondary btn-sm" onclick="copyEndpoint()" id="copy-btn">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="copy-icon"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                  <span id="copy-text">Copy</span>
+                </button>
+              </div>
+              <div style="margin-top:1rem">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.375rem;text-transform:uppercase;letter-spacing:0.05em;font-weight:500">Request Body Template</div>
+                <div class="code-block">{"messages": {"{{history}}"}}</div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.375rem;margin-top:0.75rem;text-transform:uppercase;letter-spacing:0.05em;font-weight:500">Response Path</div>
+                <div class="code-block">choices.0.message.content</div>
+              </div>
+            </div>
+      
+            <!-- How to Use -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:0.5rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                How to Use with Persona-Bench
+              </div>
+              <div class="steps">
+                <div class="step">
+                  <div class="step-num">1</div>
+                  <div class="step-text">Make sure your bot service is running and accessible at the endpoint URL above.</div>
+                </div>
+                <div class="step">
+                  <div class="step-num">2</div>
+                  <div class="step-text">Go to the <strong>Evaluate</strong> tab in Persona-Bench and configure your bot endpoint.</div>
+                </div>
+                <div class="step">
+                  <div class="step-num">3</div>
+                  <div class="step-text">Select a niche and run the evaluation. Your bot will be tested against adversarial personas.</div>
+                </div>
+                <div class="step">
+                  <div class="step-num">4</div>
+                  <div class="step-text">Review your scores in the evaluation report after running a test.</div>
+                </div>
+              </div>
+            </div>
+      
+            <!-- Bot Health -->
+            <div class="card">
+              <div class="card-title" style="margin-bottom:1rem">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                Bot Health
+              </div>
+              <div class="health-grid">
+                <div class="health-stat">
+                  <div class="health-stat-label">Status</div>
+                  <div class="health-stat-value" id="health-status">
+                    <span class="dot dot-red"></span> Offline
+                  </div>
+                </div>
+                <div class="health-stat">
+                  <div class="health-stat-label">Uptime</div>
+                  <div class="health-stat-value" id="health-uptime">—</div>
+                </div>
+                <div class="health-stat">
+                  <div class="health-stat-label">Requests</div>
+                  <div class="health-stat-value" id="health-requests">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      
       </div>
     </div>
   </div>
@@ -588,28 +1363,39 @@ main{flex:1}
 <div id="prompt-modal" class="modal-overlay">
   <div class="modal-box">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"/><path d="m14 7 3 3"/><path d="M5 6v4"/><path d="M19 14v4"/><path d="M10 2v2"/><path d="M7 8H3"/><path d="M21 16h-4"/><path d="M11 3H9"/></svg>
-      <h3 style="font-size:1.125rem;font-weight:600;color:#f8fafc">Optimized System Prompt</h3>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z"></path><path d="m14 7 3 3"></path><path d="M5 6v4"></path><path d="M19 14v4"></path><path d="M10 2v2"></path><path d="M7 8H3"></path><path d="M21 16h-4"></path><path d="M11 3H9"></path></svg>
+      <h3 style="font-size:1.125rem;font-weight:600;color:#000000">Optimized System Prompt</h3>
     </div>
-    <p style="font-size:0.875rem;color:#94a3b8;margin-bottom:16px">An improved prompt based on evaluation findings. Review and copy to use in your agent configuration.</p>
-    <div id="prompt-content" style="background:#0f172a;border-radius:8px;padding:16px;font-family:'SF Mono',Monaco,monospace;font-size:0.875rem;color:#cbd5e1;white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow-y:auto;line-height:1.6"></div>
+    <p style="font-size:0.875rem;color:rgba(0,0,0,0.5);margin-bottom:16px">An improved prompt based on evaluation findings. Review and copy to use in your agent configuration.</p>
+    <div id="prompt-content" style="background:rgba(0,0,0,0.03);border-radius:8px;padding:16px;font-family:'SF Mono',Monaco,monospace;font-size:0.875rem;color:rgba(0,0,0,0.75);white-space:pre-wrap;word-break:break-word;max-height:50vh;overflow-y:auto;line-height:1.6"></div>
     <div style="display:flex;justify-content:flex-end;margin-top:16px">
       <button class="btn btn-outline btn-sm" id="copy-prompt-btn" onclick="copyOptimizedPrompt()">
-        <svg id="copy-prompt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+        <svg id="copy-prompt-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg>
         <span id="copy-prompt-text">Copy to Clipboard</span>
       </button>
     </div>
-    <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:#94a3b8;cursor:pointer;padding:4px" onclick="closePromptModal()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    <button style="position:absolute;top:16px;right:16px;background:none;border:none;color:rgba(0,0,0,0.5);cursor:pointer;padding:4px" onclick="closePromptModal()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </button>
   </div>
 </div>
 
 <!-- ═══════════════ FOOTER ═══════════════ -->
-<footer class="footer no-print">Persona-Bench &mdash; OpenAI Codex Hackathon 2025</footer>
+<footer class="footer no-print">Persona-Bench — OpenAI Codex Hackathon 2026</footer>
 
 <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toast-container"></div>
+
+
+
+</body></html>
+
+
 <script>
+
 // ─── State ──────────────────────────────────────────────────
 let currentView = 'home';
 let niches = {};
@@ -633,6 +1419,13 @@ const FORMAT_PRESETS = {
 let _skipUrlUpdate = false; // set by popstate handler to avoid pushState loops
 
 function navigate(view) {
+  // Trigger view entrance animation
+  var viewEl = document.getElementById('view-' + view);
+  if (viewEl) {
+    viewEl.style.animation = 'none';
+    viewEl.offsetHeight;
+    viewEl.style.animation = '';
+  }
   // Hide all views
   document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
   const el = document.getElementById('view-' + view);
@@ -681,10 +1474,10 @@ document.getElementById('ensemble-toggle').addEventListener('change', function()
   const track = document.getElementById('switch-track');
   const thumb = document.getElementById('switch-thumb');
   if (this.checked) {
-    track.style.background = '#6366f1';
+    track.style.background = '#ffffff';
     thumb.style.left = '22px';
   } else {
-    track.style.background = '#475569';
+    track.style.background = 'rgba(0,0,0,0.25)';
     thumb.style.left = '2px';
   }
 });
@@ -724,6 +1517,9 @@ async function init() {
   } catch (e) {
     console.error('Failed to load niches:', e);
   }
+
+  // Initialize bot builder
+  initBotBuilder();
 
   // Set initial form values
   document.getElementById('body-template').value = FORMAT_PRESETS.openai.body_template;
@@ -995,13 +1791,13 @@ function renderLoading() {
     if (isCompleted) {
       iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>';
     } else if (isCurrent) {
-      iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
+      iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>';
     } else {
-      iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
+      iconHtml = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>';
     }
 
     row.innerHTML = iconHtml + '<span style="font-size:0.875rem;' +
-      (isCompleted ? 'color:#cbd5e1' : isCurrent ? 'color:#fff;font-weight:500' : 'color:#475569') +
+      (isCompleted ? 'color:rgba(0,0,0,0.75)' : isCurrent ? 'color:#000;font-weight:500' : 'color:rgba(0,0,0,0.25)') +
       '">' + label + '</span>';
     container.appendChild(row);
   });
@@ -1058,28 +1854,28 @@ function renderReport() {
     deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>';
     deployText.textContent = 'Approve for Deployment';
   } else if (heroScore >= 5) {
-    banner.style.borderLeftColor = '#f59e0b';
-    deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+    banner.style.borderLeftColor = '#d97706';
+    deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
     deployText.textContent = 'Approve with Changes';
   } else {
     banner.style.borderLeftColor = '#ef4444';
-    deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+    deployIcon.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
     deployText.textContent = 'Do Not Deploy';
   }
 
   // Stats cards
   const statData = [
-    { val: totalTests, label: 'Total Tests', color: '#f8fafc' },
-    { val: passed, label: 'Passed', color: '#34d399' },
-    { val: failed, label: 'Failed', color: '#f87171' },
-    { val: hallucinations, label: 'Hallucinations', color: '#fbbf24' },
+    { val: totalTests, label: 'Total Tests', color: '#000000' },
+    { val: passed, label: 'Passed', color: '#16a34a' },
+    { val: failed, label: 'Failed', color: '#dc2626' },
+    { val: hallucinations, label: 'Hallucinations', color: '#d97706' },
   ];
   const statContainer = document.getElementById('stat-cards');
   statContainer.innerHTML = '';
   statData.forEach(s => {
-    statContainer.innerHTML += '<div class="card-hover" style="background:#1e293b;border-radius:12px;padding:16px;text-align:center">' +
+    statContainer.innerHTML += '<div class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:16px;text-align:center">' +
       '<p style="font-size:1.5rem;font-weight:700;color:' + s.color + '">' + s.val + '</p>' +
-      '<p style="font-size:0.75rem;color:#64748b;margin-top:4px">' + s.label + '</p></div>';
+      '<p style="font-size:0.75rem;color:rgba(0,0,0,0.4);margin-top:4px">' + s.label + '</p></div>';
   });
 
   // Conversations
@@ -1116,7 +1912,7 @@ function updateReportWithAI() {
     report.key_strengths.forEach(s => {
       list.innerHTML += '<div style="display:flex;align-items:flex-start;gap:8px">' +
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>' +
-        '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(s) + '</span></div>';
+        '<span style="font-size:0.875rem;color:rgba(0,0,0,0.75)">' + escHtml(s) + '</span></div>';
     });
   }
 
@@ -1132,10 +1928,10 @@ function updateReportWithAI() {
         '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
         '<div style="flex:1;min-width:0">' +
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
-            '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(g.issue) + '</span>' +
+            '<span style="font-size:0.875rem;color:rgba(0,0,0,0.75)">' + escHtml(g.issue) + '</span>' +
             '<span class="badge ' + sevClass + '">' + escHtml(g.severity) + '</span>' +
           '</div>' +
-          (g.evidence ? '<p style="font-size:0.75rem;color:#64748b;font-style:italic;margin-top:4px">' + escHtml(g.evidence) + '</p>' : '') +
+          (g.evidence ? '<p style="font-size:0.75rem;color:rgba(0,0,0,0.4);font-style:italic;margin-top:4px">' + escHtml(g.evidence) + '</p>' : '') +
         '</div></div>';
     });
   }
@@ -1150,11 +1946,11 @@ function updateReportWithAI() {
       list.innerHTML += '<div>' +
         '<div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:8px">' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' +
-          '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(f.issue) + '</span>' +
+          '<span style="font-size:0.875rem;color:rgba(0,0,0,0.75)">' + escHtml(f.issue) + '</span>' +
         '</div>' +
         (f.evidence ? '<div style="background:rgba(239,68,68,0.05);border-radius:8px;padding:12px;margin-left:24px">' +
           '<p style="font-size:0.75rem;color:rgba(248,113,113,0.7);font-weight:500;margin-bottom:4px">Improvement Tip</p>' +
-          '<p style="font-size:0.75rem;color:#94a3b8;font-style:italic">' + escHtml(f.evidence) + '</p></div>' : '') +
+          '<p style="font-size:0.75rem;color:rgba(0,0,0,0.5);font-style:italic">' + escHtml(f.evidence) + '</p></div>' : '') +
       '</div>';
     });
   }
@@ -1166,14 +1962,14 @@ function updateReportWithAI() {
     list.innerHTML = '';
     report.action_items.forEach((item, i) => {
       const prioClass = item.priority === 'P0' ? 'badge-red' : item.priority === 'P1' ? 'badge-amber' : 'badge-slate';
-      list.innerHTML += '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
-        '<span style="font-size:0.875rem;font-weight:700;color:#64748b;min-width:24px;margin-top:2px">' + (i + 1) + '.</span>' +
+      list.innerHTML += '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(0,0,0,0.05)">' +
+        '<span style="font-size:0.875rem;font-weight:700;color:rgba(0,0,0,0.4);min-width:24px;margin-top:2px">' + (i + 1) + '.</span>' +
         '<div style="flex:1">' +
           '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">' +
             '<span class="badge ' + prioClass + '">' + escHtml(item.priority) + '</span>' +
-            '<span style="font-size:0.875rem;color:#e2e8f0">' + escHtml(item.action) + '</span>' +
+            '<span style="font-size:0.875rem;color:rgba(0,0,0,0.9)">' + escHtml(item.action) + '</span>' +
           '</div>' +
-          '<p style="font-size:0.75rem;color:#64748b">' + escHtml(item.rationale) + '</p>' +
+          '<p style="font-size:0.75rem;color:rgba(0,0,0,0.4)">' + escHtml(item.rationale) + '</p>' +
         '</div></div>';
     });
   }
@@ -1185,8 +1981,8 @@ function updateReportWithAI() {
     list.innerHTML = '';
     report.risk_assessment.forEach(r => {
       const lvlClass = r.level === 'critical' ? 'badge-red' : r.level === 'high' ? 'badge-orange' : r.level === 'medium' ? 'badge-amber' : 'badge-slate';
-      list.innerHTML += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05)">' +
-        '<span style="font-size:0.875rem;color:#cbd5e1">' + escHtml(r.risk) + '</span>' +
+      list.innerHTML += '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.05)">' +
+        '<span style="font-size:0.875rem;color:rgba(0,0,0,0.75)">' + escHtml(r.risk) + '</span>' +
         '<span class="badge ' + lvlClass + '">' + escHtml(r.level) + '</span></div>';
     });
   }
@@ -1238,46 +2034,46 @@ function aggregateEnsemble(results) {
 // ─── Render ensemble ────────────────────────────────────────
 function renderEnsemble(agg) {
   const cards = document.getElementById('judge-cards');
-  const brandColor = agg.avgBrandRisk <= 30 ? '#10b981' : agg.avgBrandRisk <= 60 ? '#f59e0b' : '#ef4444';
+  const brandColor = agg.avgBrandRisk <= 30 ? '#10b981' : agg.avgBrandRisk <= 60 ? '#d97706' : '#ef4444';
 
   cards.innerHTML = `
     <!-- Safety & Compliance -->
-    <div class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05)">
+    <div class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:20px;border:1px solid rgba(0,0,0,0.08)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-        <div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
         </div>
-        <h3 style="font-size:0.875rem;font-weight:600;color:#f8fafc">Safety &amp; Compliance</h3>
+        <h3 style="font-size:0.875rem;font-weight:600;color:#000000">Safety &amp; Compliance</h3>
       </div>
-      ${progressBar('Safety Score', agg.avgSafety, 100, '#6366f1', 200)}
+      ${progressBar('Safety Score', agg.avgSafety, 100, '#000000', 200)}
       ${progressBar('Compliance Score', agg.avgCompliance, 100, '#10b981', 400)}
       ${agg.allFlags.length > 0 ? '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px">' + agg.allFlags.slice(0, 6).map(f => '<span class="badge badge-red">' + escHtml(f.type) + '</span>').join('') + '</div>' : ''}
     </div>
 
     <!-- Persona & UX -->
-    <div class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05)">
+    <div class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:20px;border:1px solid rgba(0,0,0,0.08)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-        <div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <h3 style="font-size:0.875rem;font-weight:600;color:#f8fafc">Persona &amp; UX</h3>
+        <h3 style="font-size:0.875rem;font-weight:600;color:#000000">Persona &amp; UX</h3>
       </div>
-      ${progressBar('Persona Match', agg.avgPersonaMatch, 100, '#6366f1', 200)}
-      ${progressBar('Emotional Handling', agg.avgEmotionalHandling, 100, '#8b5cf6', 350)}
+      ${progressBar('Persona Match', agg.avgPersonaMatch, 100, '#000000', 200)}
+      ${progressBar('Emotional Handling', agg.avgEmotionalHandling, 100, 'rgba(0,0,0,0.5)', 350)}
       ${progressBar('Adaptation', agg.avgAdaptation, 100, '#06b6d4', 500)}
-      ${agg.missedOpportunities.length > 0 ? '<p style="color:#64748b;font-size:0.75rem;font-style:italic;margin-top:8px">Missed: ' + escHtml(agg.missedOpportunities[0]) + '</p>' : ''}
-      ${agg.strengths.length > 0 ? '<p style="color:#34d399;font-size:0.75rem;margin-top:4px">Strength: ' + escHtml(agg.strengths[0]) + '</p>' : ''}
+      ${agg.missedOpportunities.length > 0 ? '<p style="color:rgba(0,0,0,0.4);font-size:0.75rem;font-style:italic;margin-top:8px">Missed: ' + escHtml(agg.missedOpportunities[0]) + '</p>' : ''}
+      ${agg.strengths.length > 0 ? '<p style="color:#16a34a;font-size:0.75rem;margin-top:4px">Strength: ' + escHtml(agg.strengths[0]) + '</p>' : ''}
     </div>
 
     <!-- Business & Strategy -->
-    <div class="card-hover" style="background:#1e293b;border-radius:12px;padding:20px;border:1px solid rgba(255,255,255,0.05)">
+    <div class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:20px;border:1px solid rgba(0,0,0,0.08)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-        <div style="width:32px;height:32px;border-radius:50%;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,0.03);display:flex;align-items:center;justify-content:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.85)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
         </div>
-        <h3 style="font-size:0.875rem;font-weight:600;color:#f8fafc">Business &amp; Strategy</h3>
+        <h3 style="font-size:0.875rem;font-weight:600;color:#000000">Business &amp; Strategy</h3>
       </div>
-      ${progressBar('Business Score', agg.avgBusiness, 100, '#6366f1', 200)}
+      ${progressBar('Business Score', agg.avgBusiness, 100, '#000000', 200)}
       ${progressBar('Brand Risk', agg.avgBrandRisk, 100, brandColor, 400)}
       ${progressBar('Efficiency Score', agg.avgEfficiency, 100, '#06b6d4', 600)}
       ${agg.revenueImpacts.length > 0 ? '<span class="badge ' + (agg.revenueImpacts[0] === 'positive' ? 'badge-emerald' : agg.revenueImpacts[0] === 'negative' ? 'badge-red' : 'badge-slate') + '" style="margin-top:4px;font-size:10px">Revenue: ' + escHtml(agg.revenueImpacts[0]) + '</span>' : ''}
@@ -1289,28 +2085,28 @@ function renderEnsemble(agg) {
   verdict.style.display = '';
   const confClass = agg.confidence === 'high' ? 'badge-emerald' : agg.confidence === 'medium' ? 'badge-amber' : 'badge-red';
   let html = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
-    '<span style="font-size:2.25rem;font-weight:700;color:#a5b4fc;font-variant-numeric:tabular-nums">' + (agg.avgOverallScore / 10).toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:#64748b">/10</span></span>' +
+    '<span style="font-size:2.25rem;font-weight:700;color:#4338ca;font-variant-numeric:tabular-nums">' + (agg.avgOverallScore / 10).toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:rgba(0,0,0,0.4)">/10</span></span>' +
     '<div style="display:flex;align-items:center;gap:8px">' +
-      '<span style="font-size:0.75rem;color:#64748b">Confidence:</span>' +
+      '<span style="font-size:0.75rem;color:rgba(0,0,0,0.4)">Confidence:</span>' +
       '<span class="badge ' + confClass + '">' + agg.confidence.charAt(0).toUpperCase() + agg.confidence.slice(1) + '</span>' +
     '</div></div>';
 
   if (agg.finalVerdict) {
-    html += '<blockquote style="font-size:1.125rem;font-style:italic;color:#cbd5e1;border-left:4px solid #6366f1;padding-left:16px;margin-top:16px">' + escHtml(agg.finalVerdict) + '</blockquote>';
+    html += '<blockquote style="font-size:1.125rem;font-style:italic;color:rgba(0,0,0,0.75);border-left:4px solid #000000;padding-left:16px;margin-top:16px">' + escHtml(agg.finalVerdict) + '</blockquote>';
   }
   if (agg.conflictAnalysis) {
-    html += '<div style="border-left:4px solid #f59e0b;background:rgba(245,158,11,0.05);border-radius:0 8px 8px 0;padding:16px;margin-top:16px">' +
+    html += '<div style="border-left:4px solid #d97706;background:rgba(245,158,11,0.05);border-radius:0 8px 8px 0;padding:16px;margin-top:16px">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>' +
-        '<span style="font-size:0.875rem;font-weight:500;color:#fbbf24">Conflict Analysis</span></div>' +
-      '<p style="font-size:0.875rem;color:#94a3b8">' + escHtml(agg.conflictAnalysis) + '</p></div>';
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>' +
+        '<span style="font-size:0.875rem;font-weight:500;color:#d97706">Conflict Analysis</span></div>' +
+      '<p style="font-size:0.875rem;color:rgba(0,0,0,0.5)">' + escHtml(agg.conflictAnalysis) + '</p></div>';
   }
   if (agg.priorityFix) {
     html += '<div style="border:1px solid rgba(239,68,68,0.3);border-left:4px solid #ef4444;background:rgba(239,68,68,0.05);border-radius:0 8px 8px 0;padding:16px;margin-top:16px">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
-        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' +
-        '<span style="font-size:0.875rem;font-weight:500;color:#f87171">Priority Fix</span></div>' +
-      '<p style="font-size:0.875rem;color:#94a3b8">' + escHtml(agg.priorityFix) + '</p></div>';
+        '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>' +
+        '<span style="font-size:0.875rem;font-weight:500;color:#dc2626">Priority Fix</span></div>' +
+      '<p style="font-size:0.875rem;color:rgba(0,0,0,0.5)">' + escHtml(agg.priorityFix) + '</p></div>';
   }
   verdict.innerHTML = html;
 
@@ -1329,8 +2125,8 @@ function progressBar(label, value, max, color, delay) {
   const pct = Math.round((value / max) * 100);
   return '<div style="width:100%;margin-bottom:12px">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
-      '<span style="font-size:0.75rem;color:#94a3b8">' + escHtml(label) + '</span>' +
-      '<span style="font-size:0.75rem;color:#94a3b8;font-family:monospace">' + Math.round(value) + '/' + Math.round(max) + '</span>' +
+      '<span style="font-size:0.75rem;color:rgba(0,0,0,0.5)">' + escHtml(label) + '</span>' +
+      '<span style="font-size:0.75rem;color:rgba(0,0,0,0.5);font-family:monospace">' + Math.round(value) + '/' + Math.round(max) + '</span>' +
     '</div>' +
     '<div class="progress-track">' +
       '<div class="progress-fill" data-target="' + pct + '" style="width:0;background:' + color + ';transition:width 1s cubic-bezier(0.4,0,0.2,1) ' + delay + 'ms"></div>' +
@@ -1347,10 +2143,10 @@ function renderConversations(results) {
     const isFail = verdict.overall_verdict === 'fail';
     const verdictClass = isPass ? 'badge-emerald' : isFail ? 'badge-red' : 'badge-slate';
 
-    let html = '<div style="border-bottom:1px solid rgba(255,255,255,0.05)">';
+    let html = '<div style="border-bottom:1px solid rgba(0,0,0,0.08)">';
     html += '<button class="accordion-trigger" onclick="toggleAccordion(this)" aria-expanded="false">' +
       '<div style="display:flex;align-items:center;gap:12px">' +
-        '<span style="font-size:0.875rem;font-weight:500;color:#f8fafc">' + escHtml(result.persona_name || result.persona_key || 'Unknown') + '</span>' +
+        '<span style="font-size:0.875rem;font-weight:500;color:#000000">' + escHtml(result.persona_name || result.persona_key || 'Unknown') + '</span>' +
         '<span class="badge ' + verdictClass + '">' + (verdict.overall_verdict || 'ERROR').toUpperCase() + '</span>' +
       '</div>' +
       '<svg class="chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
@@ -1372,8 +2168,8 @@ function renderConversations(results) {
         '<div class="chat-msg-inner">' +
           '<div class="chat-avatar ' + (isUser ? 'user-av' : 'agent-av') + '">' +
             (isUser
-              ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
-              : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>') +
+              ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.75)" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+              : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#4338ca" stroke-width="2"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>') +
           '</div>' +
           '<div class="chat-bubble' + borderClass + '">' + escHtml(msg.text) + '</div>' +
         '</div></div>';
@@ -1383,8 +2179,8 @@ function renderConversations(results) {
     // Dimension checks
     const dims = verdict.dimensions;
     if (dims && Object.keys(dims).length > 0) {
-      html += '<div style="background:#0f172a;border-radius:8px;padding:12px;font-size:0.75rem">' +
-        '<p style="color:#64748b;font-weight:500;margin-bottom:8px">Dimension Checks:</p>' +
+      html += '<div style="background:rgba(0,0,0,0.03);border-radius:8px;padding:12px;font-size:0.75rem">' +
+        '<p style="color:rgba(0,0,0,0.4);font-weight:500;margin-bottom:8px">Dimension Checks:</p>' +
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
       for (const [dim, data] of Object.entries(dims)) {
         const dimLabel = dim.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -1394,9 +2190,9 @@ function renderConversations(results) {
         } else if (data.pass === false) {
           icon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
         } else {
-          icon = '<div style="width:12px;height:12px;border-radius:50%;background:#475569"></div>';
+          icon = '<div style="width:12px;height:12px;border-radius:50%;background:rgba(0,0,0,0.25)"></div>';
         }
-        html += '<div style="display:flex;align-items:center;gap:6px">' + icon + '<span style="color:#94a3b8">' + dimLabel + '</span></div>';
+        html += '<div style="display:flex;align-items:center;gap:6px">' + icon + '<span style="color:rgba(0,0,0,0.5)">' + dimLabel + '</span></div>';
       }
       html += '</div></div>';
     }
@@ -1427,8 +2223,8 @@ function renderRadarCharts(rep) {
       dimension: dim.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
       score: d.total > 0 ? Math.round((d.pass / d.total) * 100) : 0,
     }));
-    container.innerHTML += '<div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.1);padding:24px">' +
-      '<h3 style="font-size:0.875rem;font-weight:600;color:#cbd5e1;margin-bottom:16px">Pass Rate by Dimension</h3>' +
+    container.innerHTML += '<div style="background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.1);padding:24px">' +
+      '<h3 style="font-size:0.875rem;font-weight:600;color:rgba(0,0,0,0.75);margin-bottom:16px">Pass Rate by Dimension</h3>' +
       '<div style="position:relative;height:300px"><canvas id="radar-dimensions"></canvas></div></div>';
   }
 
@@ -1437,8 +2233,8 @@ function renderRadarCharts(rep) {
       dimension: k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
       score: Math.round(v * 10) / 10,
     }));
-    container.innerHTML += '<div style="background:#1e293b;border-radius:12px;border:1px solid rgba(255,255,255,0.1);padding:24px">' +
-      '<h3 style="font-size:0.875rem;font-weight:600;color:#cbd5e1;margin-bottom:16px">Judge Average Scores</h3>' +
+    container.innerHTML += '<div style="background:rgba(0,0,0,0.02);border-radius:12px;border:1px solid rgba(0,0,0,0.1);padding:24px">' +
+      '<h3 style="font-size:0.875rem;font-weight:600;color:rgba(0,0,0,0.75);margin-bottom:16px">Judge Average Scores</h3>' +
       '<div style="position:relative;height:300px"><canvas id="radar-judges"></canvas></div></div>';
   }
 
@@ -1449,7 +2245,7 @@ function renderRadarCharts(rep) {
         dimension: dim.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
         score: d.total > 0 ? Math.round((d.pass / d.total) * 100) : 0,
       }));
-      createRadarChart('radar-dimensions', dimData, '#6366f1', 'rgba(99,102,241,0.2)');
+      createRadarChart('radar-dimensions', dimData, '#000000', 'rgba(0,0,0,0.05)');
     }
     if (rep.ensemble_summary?.average_scores) {
       const judgeData = Object.entries(rep.ensemble_summary.average_scores).map(([k, v]) => ({
@@ -1485,19 +2281,19 @@ function createRadarChart(canvasId, data, strokeColor, fillColor) {
           beginAtZero: true,
           max: 100,
           ticks: { display: false },
-          grid: { color: 'rgba(255,255,255,0.1)' },
-          angleLines: { color: 'rgba(255,255,255,0.1)' },
-          pointLabels: { color: '#94a3b8', font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.1)' },
+          angleLines: { color: 'rgba(0,0,0,0.1)' },
+          pointLabels: { color: 'rgba(0,0,0,0.5)', font: { size: 11 } },
         }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#1e293b',
+          backgroundColor: '#ffffff',
           borderColor: strokeColor + '4d',
           borderWidth: 1,
-          titleColor: '#e2e8f0',
-          bodyColor: '#cbd5e1',
+          titleColor: 'rgba(0,0,0,0.9)',
+          bodyColor: 'rgba(0,0,0,0.75)',
           cornerRadius: 8,
           titleFont: { size: 13 },
           bodyFont: { size: 12 },
@@ -1516,7 +2312,7 @@ function animateScore(value, max, duration) {
     const progress = Math.min(elapsed / duration, 1);
     const eased = 1 - Math.pow(1 - progress, 3);
     const current = eased * value;
-    el.innerHTML = current.toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:#64748b">/' + max + '</span>';
+    el.innerHTML = current.toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:rgba(0,0,0,0.4)">/' + max + '</span>';
     if (progress < 1) requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
@@ -1529,7 +2325,7 @@ function drawScoreRing(value, max, size, strokeWidth) {
   const safeValue = Math.min(Math.max(value, 0), max);
   const offset = circumference - (safeValue / max) * circumference;
   const ratio = safeValue / max;
-  const color = ratio >= 0.8 ? '#10b981' : ratio >= 0.5 ? '#f59e0b' : '#ef4444';
+  const color = ratio >= 0.8 ? '#10b981' : ratio >= 0.5 ? '#d97706' : '#ef4444';
 
   svg.innerHTML =
     '<circle class="ring-track" cx="' + (size/2) + '" cy="' + (size/2) + '" r="' + radius + '" />' +
@@ -1598,6 +2394,424 @@ function escHtml(s) {
 
 // ─── Init ───────────────────────────────────────────────────
 init();
+
+
+// ═══════════════ BOT BUILDER ═══════════════
+// ============================
+// STATE
+// ============================
+let botStatus = { status: 'offline' };
+let botConfig = { niche: 'general', systemPrompt: '', modelName: 'default' };
+let botSelectedNiche = 'general';
+let editedPrompt = '';
+let promptLoaded = false;
+let showPromptEditor = false;
+let chatMessages = [];
+let chatInput = '';
+let chatLoading = false;
+
+// ============================
+// NICHE DATA
+// ============================
+const NICHES = {
+  general: { label: 'General / Customer Support', icon: '💬', personas: ['Adversarial Tester', 'Confused First-Timer', 'Topic Switcher', 'Impatient Task-Focused User'] },
+  customer_support: { label: 'Customer Support', icon: '🎧', personas: ['Adversarial Tester', 'Confused First-Timer', 'Topic Switcher', 'Impatient Task-Focused User'] },
+  healthcare: { label: 'Healthcare', icon: '🏥', personas: ['Anxious Symptom Checker', 'Medication Interactions Seeker', 'Insurance Coverage Questioner', 'Same-Day Appointment Demander', 'HIPAA Boundary Tester'] },
+  e_commerce: { label: 'E-Commerce', icon: '🛒', personas: ['Return Window Prober', 'Fictitious Order Inquirer', 'Discount Entitlement Claimer', 'Review Threatener', 'International Shipping Asker'] },
+  legal: { label: 'Legal', icon: '⚖️', personas: ['Legal Advice Seeker', 'Case Value Estimator', 'Confidentiality Prober', 'Fee Structure Challenger', 'Filing Deadline Rusher'] },
+  education: { label: 'Education', icon: '📚', personas: ['AI-Generated'] },
+  finance: { label: 'Finance', icon: '💰', personas: ['AI-Generated'] },
+  real_estate: { label: 'Real Estate', icon: '🏠', personas: ['AI-Generated'] },
+  travel: { label: 'Travel', icon: '✈️', personas: ['AI-Generated'] },
+  food_service: { label: 'Food Service', icon: '🍽️', personas: ['AI-Generated'] },
+};
+
+// ============================
+// TOAST
+// ============================
+function showToast(message, type) {
+  type = type || 'info';
+  var container = document.getElementById('toast-container');
+  var toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      toast.classList.add('show');
+    });
+  });
+  setTimeout(function() {
+    toast.classList.remove('show');
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 3000);
+}
+
+// ============================
+// SUB-TABS
+// ============================
+function switchSubTab(tab) {
+  var tabs = document.querySelectorAll('.sub-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.remove('active');
+    if (tabs[i].getAttribute('data-tab') === tab) tabs[i].classList.add('active');
+  }
+  var contents = document.querySelectorAll('.sub-content');
+  for (var j = 0; j < contents.length; j++) {
+    contents[j].classList.remove('active');
+  }
+  var target = document.getElementById('subtab-' + tab);
+  if (target) target.classList.add('active');
+  if (tab === 'chat') scrollChatToBottom();
+}
+
+// ============================
+// API CALLS
+// ============================
+function fetchBotStatus() {
+  fetch('/bot/health', { signal: AbortSignal.timeout(5000) })
+    .then(function(r) {
+      if (!r.ok) throw new Error('offline');
+      return r.json();
+    })
+    .then(function(data) {
+      botStatus = data;
+      updateStatusUI(true);
+    })
+    .catch(function() {
+      botStatus = { status: 'offline', uptime: 0, requests: 0 };
+      updateStatusUI(false);
+    });
+}
+
+function fetchBotConfig() {
+  fetch('/bot/config', { signal: AbortSignal.timeout(5000) })
+    .then(function(r) {
+      if (!r.ok) throw new Error('config fetch failed');
+      return r.json();
+    })
+    .then(function(data) {
+      botConfig = data;
+      botSelectedNiche = data.niche || 'general';
+      editedPrompt = data.systemPrompt || '';
+      promptLoaded = true;
+      updateConfigUI();
+    })
+    .catch(function(e) {
+      // Config not available — use defaults
+    });
+}
+
+function saveConfig(niche, prompt) {
+  var body = {};
+  if (niche !== undefined) body.niche = niche;
+  if (prompt !== undefined) body.systemPrompt = prompt;
+  return fetch('/bot/config', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(5000)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    if (data.success) {
+      if (data.config) {
+        botConfig = data.config;
+        botSelectedNiche = data.config.niche || botSelectedNiche;
+        editedPrompt = data.config.systemPrompt || editedPrompt;
+      }
+      updateConfigUI();
+      showToast('Configuration saved', 'success');
+    } else {
+      showToast('Failed to save configuration', 'error');
+    }
+  })
+  .catch(function() {
+    showToast('Could not reach bot service', 'error');
+  });
+}
+
+function sendMessage() {
+  var input = document.getElementById('chat-input');
+  var text = input.value.trim();
+  if (!text || chatLoading) return;
+  if (botStatus.status !== 'ok') {
+    showToast('Bot is offline. Start the bot service first.', 'error');
+    return;
+  }
+  chatMessages.push({ role: 'user', content: text, time: new Date() });
+  input.value = '';
+  chatLoading = true;
+  renderChat();
+
+  var messages = chatMessages.map(function(m) { return { role: m.role, content: m.content }; });
+  fetch('/bot/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: messages }),
+    signal: AbortSignal.timeout(30000)
+  })
+  .then(function(r) {
+    if (!r.ok) throw new Error('chat error');
+    return r.json();
+  })
+  .then(function(data) {
+    var content = '';
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      content = data.choices[0].message.content;
+    }
+    chatMessages.push({ role: 'assistant', content: content, time: new Date() });
+    chatLoading = false;
+    renderChat();
+    fetchBotStatus(); // refresh request count
+  })
+  .catch(function(e) {
+    chatLoading = false;
+    chatMessages.push({ role: 'assistant', content: 'Sorry, an error occurred. Please try again.', time: new Date() });
+    renderChat();
+    showToast('Failed to get bot response', 'error');
+  });
+}
+
+// ============================
+// UI UPDATES
+// ============================
+function updateStatusUI(online) {
+  var dot = document.getElementById('status-dot');
+  var text = document.getElementById('status-text');
+  var badge = document.getElementById('chat-status-badge');
+  var banner = document.getElementById('offline-banner');
+  var healthStatus = document.getElementById('health-status');
+  var healthUptime = document.getElementById('health-uptime');
+  var healthRequests = document.getElementById('health-requests');
+
+  if (online) {
+    dot.className = 'dot dot-green';
+    text.textContent = 'Connected';
+    badge.className = 'badge badge-green';
+    banner.style.display = 'none';
+    healthStatus.innerHTML = '<span class="dot dot-green"></span> Online';
+    var uptime = botStatus.uptime || 0;
+    var mins = Math.floor(uptime / 60);
+    var secs = uptime % 60;
+    healthUptime.textContent = mins > 0 ? mins + 'm ' + secs + 's' : secs + 's';
+    healthRequests.textContent = (botStatus.requests || 0).toString();
+  } else {
+    dot.className = 'dot dot-red';
+    text.textContent = 'Offline';
+    badge.className = 'badge badge-rose';
+    banner.style.display = 'flex';
+    healthStatus.innerHTML = '<span class="dot dot-red"></span> Offline';
+    healthUptime.textContent = '—';
+    healthRequests.textContent = '—';
+  }
+}
+
+function updateConfigUI() {
+  // Niche select
+  var select = document.querySelector('#view-bot .select-styled');
+  select.value = botSelectedNiche;
+
+  // Niche badge in chat
+  var niche = NICHES[botSelectedNiche] || NICHES.general;
+  document.querySelector('#view-bot [id="niche-badge"]').textContent = niche.icon + ' ' + niche.label;
+
+  // Persona list
+  var personaList = document.querySelector('#view-bot .persona-list');
+  personaList.innerHTML = '';
+  (niche.personas || []).forEach(function(p) {
+    var span = document.createElement('span');
+    span.className = 'badge badge-muted';
+    span.textContent = p;
+    personaList.appendChild(span);
+  });
+
+  // Stats
+  document.querySelector('#view-bot [id="stat-niche"]').textContent = niche.label;
+  document.querySelector('#view-bot [id="stat-prompt-len"]').textContent = (editedPrompt || '').length + ' chars';
+  document.querySelector('#view-bot [id="stat-model"]').textContent = botConfig.modelName || 'default';
+
+  // Prompt preview
+  updatePromptPreview();
+}
+
+function updatePromptPreview() {
+  var preview = document.getElementById('prompt-preview');
+  var prompt = editedPrompt || '';
+  if (prompt.length === 0) {
+    preview.textContent = 'No prompt loaded yet.';
+    preview.className = 'prompt-preview no-fade';
+  } else if (prompt.length <= 600) {
+    preview.textContent = prompt;
+    preview.className = 'prompt-preview no-fade';
+  } else {
+    preview.textContent = prompt.substring(0, 600) + '...';
+    preview.className = 'prompt-preview';
+  }
+}
+
+function togglePromptEditor() {
+  showPromptEditor = !showPromptEditor;
+  var previewArea = document.getElementById('prompt-preview-area');
+  var editorArea = document.getElementById('prompt-editor-area');
+  var actionsArea = document.getElementById('prompt-actions');
+  var toggleText = document.getElementById('toggle-text');
+
+  if (showPromptEditor) {
+    previewArea.style.display = 'none';
+    editorArea.style.display = 'block';
+    actionsArea.style.display = 'flex';
+    toggleText.textContent = 'Hide editor';
+    document.getElementById('prompt-editor').value = editedPrompt;
+  } else {
+    previewArea.style.display = 'block';
+    editorArea.style.display = 'none';
+    actionsArea.style.display = 'none';
+    toggleText.textContent = 'Show editor';
+    editedPrompt = document.getElementById('prompt-editor').value;
+    updatePromptPreview();
+    updateConfigUI();
+  }
+}
+
+function resetPrompt() {
+  var editor = document.getElementById('prompt-editor');
+  editor.value = '';
+  editedPrompt = '';
+  showToast('Prompt reset. Save to apply.', 'info');
+}
+
+function savePrompt() {
+  var editor = document.getElementById('prompt-editor');
+  editedPrompt = editor.value;
+  saveConfig(undefined, editedPrompt);
+}
+
+function handleNicheChange(value) {
+  botSelectedNiche = value;
+  saveConfig(botSelectedNiche, undefined);
+}
+
+// ============================
+// CHAT UI
+// ============================
+function renderChat() {
+  var container = document.getElementById('chat-messages');
+  var loading = document.getElementById('chat-loading');
+
+  if (chatMessages.length === 0) {
+    var niche = NICHES[botSelectedNiche] || NICHES.general;
+    var personas = (niche.personas || []).slice(0, 3).map(function(p) {
+      return '<span class="badge badge-muted" style="font-size:0.6875rem">' + p + '</span>';
+    }).join(' ');
+    container.innerHTML =
+      '<div class="chat-empty">' +
+        '<svg class="chat-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' +
+        '<h3>No messages yet</h3>' +
+        '<p>Send a message to test your bot against the <strong>' + niche.icon + ' ' + niche.label + '</strong> niche.</p>' +
+        '<div style="display:flex;gap:0.375rem;flex-wrap:wrap;justify-content:center;margin-top:0.25rem">' + personas + '</div>' +
+      '</div>';
+    loading.style.display = 'none';
+    return;
+  }
+
+  var html = '';
+  chatMessages.forEach(function(msg) {
+    var cls = msg.role === 'user' ? 'msg-user' : 'msg-bot';
+    var time = msg.time ? msg.time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    var content = escapeHtml(msg.content);
+    html += '<div class="msg ' + cls + '">' +
+      '<div class="msg-bubble">' + content + '</div>' +
+      '<div class="msg-time">' + time + '</div>' +
+    '</div>';
+  });
+  container.innerHTML = html;
+  loading.style.display = chatLoading ? 'flex' : 'none';
+  scrollChatToBottom();
+}
+
+function scrollChatToBottom() {
+  var container = document.getElementById('chat-messages');
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearChat() {
+  chatMessages = [];
+  renderChat();
+  showToast('Chat cleared', 'info');
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.appendChild(document.createTextNode(text));
+  return div.innerHTML;
+}
+
+// ============================
+// DEPLOY UI
+// ============================
+function copyEndpoint() {
+  var url = document.getElementById('bot-endpoint-url').value;
+  navigator.clipboard.writeText(url).then(function() {
+    var btn = document.getElementById('copy-btn');
+    var icon = document.getElementById('copy-icon');
+    var text = document.getElementById('copy-text');
+    icon.innerHTML = '<path d="M20 6 9 17l-5-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
+    text.textContent = 'Copied!';
+    showToast('Endpoint URL copied to clipboard', 'success');
+    setTimeout(function() {
+      icon.innerHTML = '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>';
+      text.textContent = 'Copy';
+    }, 2000);
+  }).catch(function() {
+    showToast('Failed to copy', 'error');
+  });
+}
+
+// ============================
+// INIT
+// ============================
+function initBotBuilder() {
+  // Populate niche select
+  var select = document.querySelector('#view-bot .select-styled');
+  Object.keys(NICHES).forEach(function(key) {
+    var opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = NICHES[key].icon + ' ' + NICHES[key].label;
+    select.appendChild(opt);
+  });
+  select.value = botSelectedNiche;
+
+  // Set endpoint URL
+  document.getElementById('bot-endpoint-url').value = window.location.origin + '/bot/v1/chat/completions';
+
+  // Fetch initial data
+  fetchBotStatus();
+  fetchBotConfig();
+
+  // Poll health every 5s
+  setInterval(fetchBotStatus, 5000);
+
+  // Render initial chat (empty state)
+  renderChat();
+
+  // Auto-grow textarea
+  var chatInput = document.getElementById('chat-input');
+  chatInput.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+  });
+}
+
+// Bot builder init called from main init;
 </script>
+
 </body>
 </html>
