@@ -1847,7 +1847,7 @@ function renderLoading() {
   const steps = [
     'Generating ' + nicheLabel + ' Personas...',
     'Simulating Conversations...',
-    'Running Multi-Judge Ensemble' + (body.strict ? ' (Strict Mode — 4 separate judges)...' : '...') + (body.consistency_check ? ' + Consistency Check...' : ''),
+    'Running Multi-Judge Ensemble' + (document.getElementById('strict-toggle')?.checked ? ' (Strict Mode — 4 separate judges)...' : '...') + (document.getElementById('consistency-toggle')?.checked ? ' + Consistency Check...' : ''),
     'Compiling Report...',
   ];
 
