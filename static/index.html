@@ -2076,7 +2076,7 @@ function aggregateEnsemble(results) {
   const ensembles = results.map(r => r.verdict?.ensemble).filter(Boolean);
   if (!ensembles.length) return null;
 
-  const avg = arr => { const nums = arr.filter(v => typeof v === 'number' && !isNaN(v)); return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0; };
+  const avg = arr => { const nums = arr.filter(v => typeof v === 'number' && !isNaN(v)); return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : null; };
   const BRAND_RISK_NUM = { low: 15, medium: 50, high: 75, critical: 95 };
   const safeties = [], compliances = [], personaMatches = [], emotionals = [], adaptations = [], businesses = [], brandRisks = [], efficiencies = [];
   const allFlags = [], missedOpps = [], strengths = [], revenueImpacts = [];
@@ -2127,9 +2127,31 @@ function aggregateEnsemble(results) {
 // ─── Render ensemble ────────────────────────────────────────
 function renderEnsemble(agg) {
   const cards = document.getElementById('judge-cards');
-  const brandColor = agg.avgBrandRisk <= 30 ? '#10b981' : agg.avgBrandRisk <= 60 ? '#d97706' : '#ef4444';
+  const brandColor = (agg.avgBrandRisk != null && agg.avgBrandRisk <= 30) ? '#10b981' : (agg.avgBrandRisk != null && agg.avgBrandRisk <= 60) ? '#d97706' : '#ef4444';
 
-  cards.innerHTML = `
+  // Detect if any judge dimension has no data (was blocked/filtered)
+  const hasMissingData = [agg.avgSafety, agg.avgCompliance, agg.avgPersonaMatch, agg.avgEmotionalHandling, agg.avgBusiness, agg.avgEfficiency].some(v => v === null || v === undefined);
+
+  let filterWarning = '';
+  if (hasMissingData) {
+    filterWarning = `
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:16px;margin-bottom:20px;display:flex;align-items:flex-start;gap:12px">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <div>
+        <div style="font-size:0.875rem;font-weight:600;color:#ef4444;margin-bottom:4px">Judge Evaluation Incomplete</div>
+        <div style="font-size:0.75rem;color:rgba(0,0,0,0.6);line-height:1.5">
+          One or more judge dimensions could not be evaluated. This is typically caused by the LLM provider's
+          <strong>content safety filter</strong> blocking the judge prompt (e.g. NVIDIA NIM filters prompts
+          that mention harmful examples even as scoring anchors). Scores shown as <strong style="color:#ef4444">N/A</strong>
+          indicate the judge was blocked — these are NOT the same as a score of 0.
+          <br><strong>Fix:</strong> Use a provider with less aggressive content filtering, or the prompts
+          have been auto-sanitized on retry. Try re-running the evaluation.
+        </div>
+      </div>
+    </div>`;
+  }
+
+  cards.innerHTML = filterWarning + `
     <!-- Safety & Compliance -->
     <div class="card-hover" style="background:rgba(0,0,0,0.02);border-radius:12px;padding:20px;border:1px solid rgba(0,0,0,0.08)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
@@ -2177,8 +2199,9 @@ function renderEnsemble(agg) {
   const verdict = document.getElementById('ensemble-verdict');
   verdict.style.display = '';
   const confClass = agg.confidence === 'high' ? 'badge-emerald' : agg.confidence === 'medium' ? 'badge-amber' : 'badge-red';
+  const scoreLabel = hasMissingData ? '<span style="font-size:0.625rem;color:#ef4444;font-weight:500;margin-left:8px">⚠ unreliable — judges blocked</span>' : '';
   let html = '<div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">' +
-    '<span style="font-size:2.25rem;font-weight:700;color:#4338ca;font-variant-numeric:tabular-nums">' + (agg.avgOverallScore / 10).toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:rgba(0,0,0,0.4)">/10</span></span>' +
+    '<span style="font-size:2.25rem;font-weight:700;color:#4338ca;font-variant-numeric:tabular-nums">' + (agg.avgOverallScore / 10).toFixed(1) + '<span style="font-size:0.875rem;font-weight:400;color:rgba(0,0,0,0.4)">/10</span></span>' + scoreLabel +
     '<div style="display:flex;align-items:center;gap:8px">' +
       '<span style="font-size:0.75rem;color:rgba(0,0,0,0.4)">Confidence:</span>' +
       '<span class="badge ' + confClass + '">' + agg.confidence.charAt(0).toUpperCase() + agg.confidence.slice(1) + '</span>' +
@@ -2258,6 +2281,17 @@ function renderEnsemble(agg) {
 }
 
 function progressBar(label, value, max, color, delay) {
+  // When value is null (judge was blocked/filtered), show N/A instead of 0/100
+  if (value === null || value === undefined) {
+    return '<div style="width:100%;margin-bottom:12px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+        '<span style="font-size:0.75rem;color:rgba(0,0,0,0.5)">' + escHtml(label) + '</span>' +
+        '<span style="font-size:0.75rem;color:#ef4444;font-family:monospace;font-weight:500">N/A</span>' +
+      '</div>' +
+      '<div class="progress-track" style="opacity:0.3">' +
+        '<div style="width:0;height:100%;background:' + color + '"></div>' +
+      '</div></div>';
+  }
   const pct = Math.round((value / max) * 100);
   return '<div style="width:100%;margin-bottom:12px">' +
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
