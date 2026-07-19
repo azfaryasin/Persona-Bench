@@ -1,12 +1,3 @@
-"""
-FastAPI app: the endpoints the frontend calls.
-
-Run locally:
-    export OPENAI_API_KEY=sk-...
-    uvicorn app:app --reload
-
-Then open http://localhost:8000
-"""
 
 import os
 import uuid
