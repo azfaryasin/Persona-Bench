@@ -8,6 +8,10 @@ Built for the OpenAI × NamasteDev Codex Hackathon 2026.
 
 ---
 
+# Project Name
+
+🔗 **Live Demo:** https://persona-bench-production.up.railway.app/
+
 ## Why this exists
 
 Every team shipping an AI agent has the same blind spot: you chat with your own bot a few times, it seems fine, you ship it — and then a real user asks something you never tried, and the bot fabricates a policy, a URL, or a refund guarantee that doesn't exist. Persona Bench automates the part manual QA can't scale: running your agent through a battery of realistic and adversarial personas, and having a second AI grade every response against evidence from the transcript, not vibes.
