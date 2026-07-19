@@ -14,7 +14,7 @@ dynamically via LLM and cached.
 
 import json
 import asyncio
-from llm_client import call_with_retry, MODEL
+from llm_client import call_with_retry, MODEL, extract_content
 
 
 # ---------------------------------------------------------------------------
@@ -377,7 +377,7 @@ async def generate_niche_personas(niche: str) -> dict:
         print(f"[persona gen] LLM call failed for niche '{niche}': {e}")
         return {}
 
-    raw = response.choices[0].message.content.strip()
+    raw = extract_content(response, caller="personas:generate")
     raw = raw.replace("```json", "").replace("```", "").strip()
 
     try:

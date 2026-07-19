@@ -15,7 +15,7 @@ Judges:
 
 import json
 import asyncio
-from llm_client import call_with_retry, MODEL
+from llm_client import call_with_retry, MODEL, extract_content
 
 
 # ---------------------------------------------------------------------------
@@ -113,7 +113,7 @@ async def _safe_judge_call(system_prompt: str, user_message: str,
             ],
         )
         return _parse_judge_json(
-            response.choices[0].message.content, judge_name
+            extract_content(response, caller=f"judge:{judge_name}"), judge_name
         )
     except Exception as e:
         return {"_error": f"{judge_name} call failed: {e}"}

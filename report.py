@@ -4,7 +4,7 @@ of evaluation results and optimize system prompts.
 """
 
 import json
-from llm_client import call_with_retry, MODEL
+from llm_client import call_with_retry, MODEL, extract_content
 
 
 async def generate_report(evaluation_data: dict) -> dict:
@@ -161,7 +161,7 @@ Reference specific test results in your evidence. Maximum 5 items per list."""
                 {"role": "user", "content": user_msg},
             ],
         )
-        raw = response.choices[0].message.content.strip()
+        raw = extract_content(response, caller="report:generate")
         raw = raw.replace("```json", "").replace("```", "").strip()
         report = json.loads(raw)
     except (json.JSONDecodeError, Exception) as e:
@@ -307,7 +307,7 @@ Output ONLY the improved system prompt text. No explanation, no markdown fences,
                 {"role": "user", "content": f"Generate an improved system prompt for a {niche_label} chatbot that fixes the observed failures."},
             ],
         )
-        improved = response.choices[0].message.content.strip()
+        improved = extract_content(response, caller="report:optimize")
         improved = improved.replace("```", "").strip()
         return improved
     except Exception as e:

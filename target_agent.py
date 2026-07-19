@@ -9,7 +9,7 @@ When target_config="__custom__", routes through custom_agent.call_custom_target
 using the config stored in _custom_target_config["config"].
 """
 
-from llm_client import call_with_retry, MODEL
+from llm_client import call_with_retry, MODEL, extract_content
 
 TARGET_CONFIGS = {
     "weak": {
@@ -71,4 +71,4 @@ async def call_target_agent(
         max_tokens=400,
         messages=messages,
     )
-    return response.choices[0].message.content.strip()
+    return extract_content(response, caller="target_agent")

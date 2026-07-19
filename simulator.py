@@ -3,7 +3,7 @@ Simulator: runs a persona (simulated user) in conversation with the target
 agent for N turns, producing a transcript. Fully async.
 """
 
-from llm_client import call_with_retry, MODEL
+from llm_client import call_with_retry, MODEL, extract_content
 from personas import PERSONAS
 from target_agent import call_target_agent
 
@@ -22,7 +22,7 @@ async def get_persona_reply(
         max_tokens=200,
         messages=messages,
     )
-    return response.choices[0].message.content.strip()
+    return extract_content(response, caller="simulator:persona")
 
 
 async def run_persona_conversation(

@@ -70,6 +70,46 @@ MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 _RETRY_DELAYS = [5, 10, 20]
 
 
+def extract_content(response, caller: str = "unknown") -> str:
+    """
+    Safely extract text content from an OpenAI API response.
+
+    Handles the case where content is None (common with NVIDIA, Azure, and other
+    providers that return None when finish_reason is "content_filter" or the
+    model refuses to answer).  Logs the finish_reason so the operator can see
+    *why* the response was empty.
+
+    Args:
+        response: The ChatCompletion object from the API.
+        caller:   A short label (e.g. "simulator", "judge") for log messages.
+
+    Returns:
+        The content string (stripped), or a descriptive placeholder if None/empty.
+    """
+    # Guard: no choices at all
+    if not response or not response.choices:
+        print(f"[{caller}] WARNING: API response has no choices. Full response: {response}")
+        return "[No response from API]"
+
+    choice = response.choices[0]
+    finish_reason = getattr(choice, "finish_reason", None)
+    content = choice.message.content if choice.message else None
+
+    if content is None:
+        # Log the raw finish_reason — this is the diagnostic the user needs
+        print(f"[{caller}] WARNING: content is None. finish_reason={finish_reason!r}")
+        if finish_reason == "content_filter":
+            return "[Response blocked by content filter]"
+        return "[No response — possible content filter or model refusal]"
+    elif not content.strip():
+        print(f"[{caller}] WARNING: content is empty string. finish_reason={finish_reason!r}")
+        if finish_reason == "content_filter":
+            return "[Response blocked by content filter]"
+        return "[Empty response from model]"
+
+    return content.strip()
+
+
 async def call_with_retry(**kwargs):
     """
     Wrap client.chat.completions.create() with retry logic for rate limits.
