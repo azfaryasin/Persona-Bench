@@ -1,3 +1,13 @@
+"""
+FastAPI app: the endpoints the frontend calls.
+
+Run locally:
+    export OPENAI_API_KEY=sk-...
+    uvicorn app:app --reload
+
+Then open http://localhost:8000
+"""
+
 import os
 import uuid
 import asyncio
@@ -16,6 +26,9 @@ from report import generate_report, optimize_system_prompt
 from persona_bench_bot_server import bot_router
 
 app = FastAPI(title="Persona Bench")
+
+# Track whether the NVIDIA filter evasion code is loaded
+_JUDGE_HAS_FILTER_EVASION = hasattr(judge, '_FILTER_WORD_MAP') and hasattr(judge, '_build_nvidia_safe_prompt')
 
 # In-memory store — fine for a hackathon demo
 RESULTS: dict[str, dict] = {}
@@ -165,6 +178,52 @@ async def list_runs():
     return runs
 
 
+@app.get("/api/filter-check")
+async def filter_check():
+    """Diagnostic endpoint: verify NVIDIA filter evasion is loaded and show prompt safety status."""
+    from judge import (
+        _FILTER_WORD_MAP, _build_nvidia_safe_prompt, _preprocess_transcript,
+        _build_combined_judge_prompt, _SAFETY_SYSTEM_PROMPT,
+    )
+    import re
+
+    # Check if new code is loaded
+    has_filter_map = bool(_FILTER_WORD_MAP)
+    has_safe_prompt_fn = callable(_build_nvidia_safe_prompt)
+    has_preprocess = callable(_preprocess_transcript)
+    new_code_loaded = has_filter_map and has_safe_prompt_fn and has_preprocess
+
+    # Test prompt sanitization on General niche
+    prompt = _build_combined_judge_prompt('general', 'Test')
+    safe_prompt = _build_nvidia_safe_prompt(prompt)
+
+    safety_prompt = _build_nvidia_safe_prompt(_SAFETY_SYSTEM_PROMPT)
+
+    # Check for any remaining triggers
+    TRIGGERS = ['harmful', 'dangerous', 'unauthorized_practice', 'privacy_violation',
+                'data_breach', 'discrimination', 'medical advice', 'dosage instructions']
+    remaining = []
+    full_text = safe_prompt + '\n' + safety_prompt
+    for t in TRIGGERS:
+        if t in full_text.lower():
+            remaining.append(t)
+
+    return {
+        'new_code_loaded': new_code_loaded,
+        'filter_word_map_size': len(_FILTER_WORD_MAP) if has_filter_map else 0,
+        'triggers_remaining': remaining,
+        'general_prompt_safe': len(remaining) == 0,
+        'safety_prompt_has_evidence_rule': 'EVIDENCE REQUIREMENT' in _SAFETY_SYSTEM_PROMPT,
+        'diagnosis': (
+            'NEW filter evasion code is ACTIVE — prompts are pre-sanitized before API calls.'
+            if new_code_loaded and len(remaining) == 0
+            else 'OLD code is running — server needs to be RESTARTED to load the new judge.py!'
+            if not new_code_loaded
+            else f'New code loaded but {len(remaining)} trigger words remain in prompts.'
+        ),
+    }
+
+
 @app.get("/niches")
 async def list_niches():
     """Return all available niches with labels and whether they have built-in personas."""
@@ -187,6 +246,7 @@ async def list_personas(niche: str = "general"):
 # Report endpoints
 # ---------------------------------------------------------------------------
 
+# (report page is now served by the SPA in static/index.html)
 
 
 @app.get("/report/{run_id}/data")
