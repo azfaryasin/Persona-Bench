@@ -7,6 +7,20 @@ import json
 from llm_client import call_with_retry, MODEL, extract_content
 
 
+def _safe_dict(value, default=None):
+    """Return *value* if it's a dict, else *default* (defaults to {})."""
+    if isinstance(value, dict):
+        return value
+    return default if default is not None else {}
+
+
+def _safe_list(value, default=None):
+    """Return *value* if it's a list, else *default* (defaults to [])."""
+    if isinstance(value, list):
+        return value
+    return default if default is not None else []
+
+
 async def generate_report(evaluation_data: dict) -> dict:
     """
     Given a full evaluation run result (with results[].verdict),
@@ -27,7 +41,10 @@ async def generate_report(evaluation_data: dict) -> dict:
     results = evaluation_data.get("results", [])
 
     # Detect if ensemble data is available
-    has_ensemble = any(r.get("verdict", {}).get("ensemble") for r in results)
+    has_ensemble = any(
+        isinstance(r.get("verdict"), dict) and r["verdict"].get("ensemble")
+        for r in results
+    )
 
     # Build a concise summary of each persona test for the LLM
     test_summaries = []
@@ -36,9 +53,10 @@ async def generate_report(evaluation_data: dict) -> dict:
     safety_flags_collected = []
 
     for r in results:
-        v = r.get("verdict", {})
-        dims = v.get("dimensions", {})
-        failed_dims = [k.replace("_", " ") for k, dv in dims.items() if dv and dv.get("pass") is False]
+        v = _safe_dict(r.get("verdict"))
+        dims = _safe_dict(v.get("dimensions"))
+        failed_dims = [k.replace("_", " ") for k, dv in dims.items()
+                       if isinstance(dv, dict) and dv.get("pass") is False]
         line = (
             f"- {r.get('persona_name', 'Unknown')}: "
             f"verdict={v.get('overall_verdict', '?')}, "
@@ -48,9 +66,9 @@ async def generate_report(evaluation_data: dict) -> dict:
         )
 
         # Append ensemble data if available
-        ens = v.get("ensemble")
+        ens = _safe_dict(v.get("ensemble"))
         if ens:
-            js = ens.get("judge_scores", {})
+            js = _safe_dict(ens.get("judge_scores"))
             line += f"\n  Ensemble: overall={ens.get('overall_score', '?')}/100, confidence={ens.get('confidence', '?')}"
             for jname, jval in js.items():
                 line += f", {jname}={jval}"
@@ -61,9 +79,9 @@ async def generate_report(evaluation_data: dict) -> dict:
             confidence_dist[conf] = confidence_dist.get(conf, 0) + 1
 
             # Collect safety flags
-            safety_judge = ens.get("judges", {}).get("safety", {})
-            for flag in safety_judge.get("flags", []):
-                if flag.get("type") and flag.get("type") != "none":
+            safety_judge = _safe_dict(ens.get("judges", {}).get("safety"))
+            for flag in _safe_list(safety_judge.get("flags")):
+                if isinstance(flag, dict) and flag.get("type") and flag.get("type") != "none":
                     safety_flags_collected.append(f"    - [{flag.get('severity', '?')}] {flag.get('type')}: {flag.get('explanation', '')[:80]}")
 
         test_summaries.append(line)
@@ -72,22 +90,31 @@ async def generate_report(evaluation_data: dict) -> dict:
 
     # Compute numeric stats
     total = len(results)
-    passes = sum(1 for r in results if r.get("verdict", {}).get("overall_verdict") == "pass")
-    fails = sum(1 for r in results if r.get("verdict", {}).get("overall_verdict") == "fail")
-    hallucinations = sum(1 for r in results if r.get("verdict", {}).get("hallucination_detected") is True)
+    passes = sum(
+        1 for r in results
+        if isinstance(r.get("verdict"), dict) and r["verdict"].get("overall_verdict") == "pass"
+    )
+    fails = sum(
+        1 for r in results
+        if isinstance(r.get("verdict"), dict) and r["verdict"].get("overall_verdict") == "fail"
+    )
+    hallucinations = sum(
+        1 for r in results
+        if isinstance(r.get("verdict"), dict) and r["verdict"].get("hallucination_detected") is True
+    )
     pass_rate = round((passes / total * 100) if total > 0 else 0, 1)
 
     # Compute dimension-level pass rates
     dim_scores = {}
     for r in results:
-        dims = r.get("verdict", {}).get("dimensions", {})
+        dims = _safe_dict(r.get("verdict", {}).get("dimensions"))
         for dk, dv in dims.items():
             if dk not in dim_scores:
                 dim_scores[dk] = {"pass": 0, "fail": 0, "total": 0}
             dim_scores[dk]["total"] += 1
-            if dv and dv.get("pass") is True:
+            if isinstance(dv, dict) and dv.get("pass") is True:
                 dim_scores[dk]["pass"] += 1
-            elif dv and dv.get("pass") is False:
+            elif isinstance(dv, dict) and dv.get("pass") is False:
                 dim_scores[dk]["fail"] += 1
 
     dim_summary = "\n".join(
@@ -203,14 +230,20 @@ def _build_fallback_report(evaluation_data: dict, error: str) -> dict:
     """Build a basic report without LLM if the call fails."""
     results = evaluation_data.get("results", [])
     total = len(results)
-    passes = sum(1 for r in results if r.get("verdict", {}).get("overall_verdict") == "pass")
+    passes = sum(
+        1 for r in results
+        if isinstance(r.get("verdict"), dict) and r["verdict"].get("overall_verdict") == "pass"
+    )
     fails = total - passes
-    hallucinations = sum(1 for r in results if r.get("verdict", {}).get("hallucination_detected") is True)
+    hallucinations = sum(
+        1 for r in results
+        if isinstance(r.get("verdict"), dict) and r["verdict"].get("hallucination_detected") is True
+    )
     pass_rate = round((passes / total * 100) if total > 0 else 0, 1)
 
     gaps = []
     for r in results:
-        v = r.get("verdict", {})
+        v = _safe_dict(r.get("verdict"))
         if v.get("overall_verdict") == "fail":
             gaps.append({
                 "issue": f"Failed against {r.get('persona_name', 'Unknown')}",
@@ -256,9 +289,10 @@ async def optimize_system_prompt(
     # Build failure descriptions
     failure_descriptions = []
     for f in failures[:10]:  # limit to avoid token overflow
-        v = f.get("verdict", {})
-        dims = v.get("dimensions", {})
-        failed_dims = [k.replace("_", " ") for k, dv in dims.items() if dv and dv.get("pass") is False]
+        v = _safe_dict(f.get("verdict"))
+        dims = _safe_dict(v.get("dimensions"))
+        failed_dims = [k.replace("_", " ") for k, dv in dims.items()
+                       if isinstance(dv, dict) and dv.get("pass") is False]
         desc = (
             f"- Test: {f.get('persona_name', 'Unknown')}\n"
             f"  Verdict: {v.get('overall_verdict', '?')}\n"
@@ -269,10 +303,10 @@ async def optimize_system_prompt(
         if failed_dims:
             desc += f"  Failed dimensions: {', '.join(failed_dims)}\n"
         # Add ensemble priority fix if available
-        ens = v.get("ensemble")
+        ens = _safe_dict(v.get("ensemble"))
         if ens:
             desc += f"  Ensemble priority fix: {ens.get('priority_fix', 'N/A')}\n"
-            js = ens.get("judge_scores", {})
+            js = _safe_dict(ens.get("judge_scores"))
             if js:
                 desc += f"  Judge scores: quality={js.get('quality','?')}, safety={js.get('safety','?')}, persona={js.get('persona','?')}, business={js.get('business','?')}\n"
         failure_descriptions.append(desc)

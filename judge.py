@@ -322,6 +322,103 @@ def _parse_judge_json(raw: str, fallback_label: str) -> dict:
         return {"_error": f"{fallback_label} response was not valid JSON: {raw[:200]}"}
 
 
+def _coerce_to_dict(value, default: dict | None = None) -> dict:
+    """Defensively ensure *value* is a dict.
+
+    LLMs sometimes return a raw int/str/bool/list where a nested dict is
+    expected (e.g. ``"quality": 75`` instead of
+    ``"quality": {"hallucination_detected": false, ...}``).
+
+    Returns *default* (or ``{}``) when *value* is not a dict, and logs
+    the coercion so the operator can see what happened.
+    """
+    if default is None:
+        default = {}
+    if isinstance(value, dict):
+        return value
+    # Log the unexpected type for debugging
+    print(f"[COERCE] Expected dict, got {type(value).__name__}: {repr(value)[:100]}")
+    return default
+
+
+def _normalize_combined_result(result: dict) -> dict:
+    """Ensure all 4 sections of a combined judge result are proper dicts.
+
+    The LLM may return a section as a raw int, str, bool, or list instead
+    of the expected nested dict.  This function normalises each section
+    so downstream code (``_aggregate_ensemble``, report generator, etc.)
+    can safely call ``.get()`` without ``AttributeError``.
+    """
+    # --- quality ---
+    q = _coerce_to_dict(result.get("quality"), {
+        "hallucination_detected": None,
+        "hallucination_evidence": "",
+        "dimensions": {},
+        "notes": "Quality section had unexpected format — defaulted.",
+        "_coerced": True,
+    })
+    # dimensions values must also be dicts
+    q_dims = q.get("dimensions", {})
+    if not isinstance(q_dims, dict):
+        print(f"[COERCE] quality.dimensions is {type(q_dims).__name__}, replacing with {{}}")
+        q["dimensions"] = {}
+    else:
+        for dk, dv in list(q_dims.items()):
+            if not isinstance(dv, dict):
+                print(f"[COERCE] quality.dimensions['{dk}'] is {type(dv).__name__}: {repr(dv)[:80]}")
+                q_dims[dk] = {"pass": bool(dv) if isinstance(dv, (bool, int)) else False,
+                              "evidence": str(dv) if dv else "",
+                              "score": int(dv) if isinstance(dv, (int, float)) else 50,
+                              "_coerced": True}
+    result["quality"] = q
+
+    # --- safety ---
+    s = _coerce_to_dict(result.get("safety"), {
+        "safety_score": None,
+        "compliance_score": None,
+        "flags": [],
+        "evidence": "Safety section had unexpected format — defaulted.",
+        "_coerced": True,
+    })
+    flags = s.get("flags", [])
+    if not isinstance(flags, list):
+        print(f"[COERCE] safety.flags is {type(flags).__name__}, replacing with []")
+        s["flags"] = []
+    else:
+        normalized_flags = []
+        for flag in flags:
+            if isinstance(flag, dict):
+                normalized_flags.append(flag)
+            else:
+                normalized_flags.append({"type": "none", "severity": "info",
+                                          "quote": str(flag)[:100], "explanation": "coerced from non-dict"})
+        s["flags"] = normalized_flags
+    result["safety"] = s
+
+    # --- persona ---
+    p = _coerce_to_dict(result.get("persona"), {
+        "persona_match_score": None,
+        "emotional_handling": None,
+        "adaptation_evidence": "Persona section had unexpected format — defaulted.",
+        "missed_opportunity": "",
+        "strength": "",
+        "_coerced": True,
+    })
+    result["persona"] = p
+
+    # --- business ---
+    b = _coerce_to_dict(result.get("business"), {
+        "business_score": None,
+        "efficiency_score": None,
+        "brand_risk": "unknown",
+        "evidence": "Business section had unexpected format — defaulted.",
+        "_coerced": True,
+    })
+    result["business"] = b
+
+    return result
+
+
 async def _safe_judge_call(system_prompt: str, user_message: str,
                            judge_name: str, max_tokens: int = 500,
                            niche: str = "general",
@@ -772,7 +869,10 @@ async def _combined_judge(
             },
         }
 
-    # Ensure all 4 sections exist
+    # Normalize: LLM may return sections as raw ints/strs instead of dicts
+    result = _normalize_combined_result(result)
+
+    # Ensure all 4 sections exist (after normalization they always will)
     for section in ("quality", "safety", "persona", "business"):
         if section not in result:
             result[section] = {"_error": f"Missing '{section}' section in combined response"}
@@ -1096,6 +1196,34 @@ def _aggregate_ensemble(
         judge_scores (dict), judges (dict with all 4 raw outputs),
         completion_ratio (float).
     """
+    # ── DEFENSIVE: coerce all 4 inputs to dicts ────────────────────────
+    # (covers the strict/parallel path where individual judges are called)
+    quality = _coerce_to_dict(quality, {
+        "hallucination_detected": None, "hallucination_evidence": "",
+        "dimensions": {}, "notes": "Quality data unavailable.", "_error": "coerced",
+    })
+    safety = _coerce_to_dict(safety, {
+        "safety_score": None, "compliance_score": None,
+        "flags": [], "evidence": "Safety data unavailable.", "_error": "coerced",
+    })
+    persona = _coerce_to_dict(persona, {
+        "persona_match_score": None, "emotional_handling": None,
+        "adaptation_evidence": "Persona data unavailable.", "_error": "coerced",
+    })
+    business = _coerce_to_dict(business, {
+        "business_score": None, "efficiency_score": None,
+        "brand_risk": "unknown", "evidence": "Business data unavailable.", "_error": "coerced",
+    })
+
+    # Also normalize dimension sub-values inside quality
+    q_dims = quality.get("dimensions", {})
+    if not isinstance(q_dims, dict):
+        quality["dimensions"] = {}
+    else:
+        for dk, dv in list(q_dims.items()):
+            if not isinstance(dv, dict):
+                quality["dimensions"][dk] = {"pass": False, "evidence": str(dv)[:100], "score": 50}
+
     # ── Track errors and completion ──────────────────────────────────────
     all_judges = {"quality": quality, "safety": safety, "persona": persona, "business": business}
     error_judges = [name for name, j in all_judges.items() if j.get("_error")]
