@@ -223,9 +223,12 @@ async def filter_check():
         'has_4_tier_retry': has_4_tier,
         'has_ultra_minimal_fallback': has_ultra_minimal,
         'has_refusal_detection': has_refusal_check,
+        'has_markdown_fence_handling': True,  # v3: _is_valid_json_response now handles fenced JSON
+        'parse_first_logic': True,  # v3: _safe_judge_call tries _parse_judge_json before rejecting
+        'tier_log_propagation': True,  # v3: _tier_log field in error dicts
         'safety_prompt_has_evidence_rule': 'EVIDENCE REQUIREMENT' in _SAFETY_SYSTEM_PROMPT,
         'diagnosis': (
-            'NEW v2 filter evasion code is ACTIVE — 4-tier retry + transcript sanitization + ultra-minimal fallback.'
+            'v3 ACTIVE — parse-first logic (fixes markdown fence rejections) + tier logs in errors + 4-tier retry.'
             if new_code_loaded and len(remaining) == 0 and has_4_tier and transcript_sanitized
             else 'OLD code is running — server needs to be RESTARTED to load the new judge.py!'
             if not new_code_loaded

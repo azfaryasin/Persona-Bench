@@ -461,6 +461,7 @@ async def _safe_judge_call(system_prompt: str, user_message: str,
     ]
 
     last_error = "unknown"
+    tier_log = []  # ← NEW: collect per-tier failure details
     for tier_name, prompt, transcript in tiers:
         try:
             print(f"[{judge_name}] {tier_name} (prompt={len(prompt)}c, transcript={len(transcript)}c)")
@@ -481,34 +482,37 @@ async def _safe_judge_call(system_prompt: str, user_message: str,
             if _is_filtered_response(raw):
                 print(f"[{judge_name}] {tier_name}: BLOCKED/REFUSED — trying next tier...")
                 last_error = f"Blocked at {tier_name}: {raw[:200]}"
+                tier_log.append(f"{tier_name}: BLOCKED — {raw[:150]}")
                 continue
 
-            # Check if response looks like JSON (not prose)
-            if not _is_valid_json_response(raw):
-                print(f"[{judge_name}] {tier_name}: Not JSON — {raw_repr[:100]} — trying next tier...")
-                last_error = f"Not JSON at {tier_name}: {raw[:200]}"
-                continue
-
-            # Parse the JSON
+            # Try to parse the JSON FIRST (before the strict JSON-shape check).
+            # _parse_judge_json handles markdown fences; _is_valid_json_response
+            # was too strict and rejected fenced responses, causing ALL tiers
+            # to fail even when the LLM returned perfectly valid JSON.
             parsed = _parse_judge_json(raw, judge_name)
-            if "_error" in parsed:
-                print(f"[{judge_name}] {tier_name}: Parse error — {parsed['_error'][:100]} — trying next tier...")
-                last_error = parsed["_error"]
-                continue
+            if "_error" not in parsed:
+                # SUCCESS — parsed cleanly
+                print(f"[{judge_name}] {tier_name}: SUCCESS (parsed {len(str(parsed))} chars of JSON)")
+                return parsed
 
-            # SUCCESS!
-            print(f"[{judge_name}] {tier_name}: SUCCESS")
-            return parsed
+            # Parse failed — log the raw response for debugging
+            parse_err = parsed.get("_error", "unknown parse error")[:150]
+            print(f"[{judge_name}] {tier_name}: Parse error — {parse_err} — trying next tier...")
+            last_error = parse_err
+            tier_log.append(f"{tier_name}: PARSE ERROR — {parse_err}")
+            continue
 
         except Exception as e:
             exc_name = type(e).__name__
             exc_msg = str(e)[:200]
             print(f"[{judge_name}] {tier_name}: EXCEPTION {exc_name}: {exc_msg}")
             last_error = f"{exc_name}: {exc_msg}"
+            tier_log.append(f"{tier_name}: EXCEPTION {exc_name} — {exc_msg[:150]}")
             continue
 
     # ALL 4 TIERS FAILED
-    print(f"[{judge_name}] ALL 4 TIERS EXHAUSTED. Last error: {last_error[:200]}")
+    tier_summary = " | ".join(tier_log) if tier_log else last_error[:300]
+    print(f"[{judge_name}] ALL 4 TIERS EXHAUSTED. Tier log: {tier_summary}")
     return {
         "_error": (
             f"{judge_name}: All 4 evasion tiers failed. "
@@ -516,6 +520,7 @@ async def _safe_judge_call(system_prompt: str, user_message: str,
             f"The provider's content filter is too strict for this content. "
             f"Score: N/A (the judge was unable to evaluate)."
         ),
+        "_tier_log": tier_summary,
         "_content_filter_blocked": True,
     }
 
@@ -587,11 +592,29 @@ def _is_filtered_response(text: str) -> bool:
 
 
 def _is_valid_json_response(text: str) -> bool:
-    """Check if the response looks like valid JSON (starts with {)."""
+    """Check if the response looks like valid JSON.
+
+    Handles both bare JSON (``{...}``) and markdown-fenced JSON
+    (```` ````json\n{...}\n```` ````) — LLMs frequently wrap their
+    output in code fences, and we must not reject those.
+    """
     if not text:
         return False
     stripped = text.strip()
-    return stripped.startswith("{") and stripped.endswith("}")
+    # Bare JSON
+    if stripped.startswith("{") and stripped.endswith("}"):
+        return True
+    # Markdown-fenced JSON — strip fences, then check
+    if stripped.startswith("```"):
+        lines = stripped.split('\n')
+        # Remove first line (opening fence) and last line (closing fence)
+        inner = '\n'.join(lines[1:])
+        # Remove trailing closing fence if present
+        if inner.rstrip().endswith('```'):
+            inner = inner.rstrip()[:-3]
+        inner = inner.strip()
+        return inner.startswith("{") and inner.endswith("}")
+    return False
 
 
 def _strip_examples_from_prompt(prompt: str) -> str:
@@ -839,6 +862,7 @@ async def _combined_judge(
 
     if "_error" in result:
         error_msg = result["_error"]
+        tier_log = result.get("_tier_log", "")
         return {
             "quality": {
                 "hallucination_detected": None,
@@ -846,6 +870,7 @@ async def _combined_judge(
                 "dimensions": {},
                 "notes": error_msg,
                 "_error": error_msg,
+                "_tier_log": tier_log,
             },
             "safety": {
                 "safety_score": None,
@@ -853,12 +878,14 @@ async def _combined_judge(
                 "flags": [],
                 "evidence": "",
                 "_error": error_msg,
+                "_tier_log": tier_log,
             },
             "persona": {
                 "persona_match_score": None,
                 "emotional_handling": None,
                 "adaptation_evidence": "",
                 "_error": error_msg,
+                "_tier_log": tier_log,
             },
             "business": {
                 "business_score": None,
@@ -866,6 +893,7 @@ async def _combined_judge(
                 "brand_risk": "unknown",
                 "evidence": "",
                 "_error": error_msg,
+                "_tier_log": tier_log,
             },
         }
 
@@ -951,6 +979,7 @@ async def _quality_judge(
             "notes": result["_error"],
             "dimensions": {},
             "_error": result["_error"],
+            "_tier_log": result.get("_tier_log", ""),
         }
 
     # Ensure universal fields exist
@@ -1029,6 +1058,7 @@ async def _safety_judge(
             "flags": [],
             "evidence": result["_error"],
             "_error": result["_error"],
+            "_tier_log": result.get("_tier_log", ""),
         }
 
     result.setdefault("safety_score", None)
@@ -1095,6 +1125,7 @@ async def _persona_judge(
             "missed_opportunity": "",
             "strength": "",
             "_error": result["_error"],
+            "_tier_log": result.get("_tier_log", ""),
         }
 
     result.setdefault("persona_match_score", None)
@@ -1165,6 +1196,7 @@ async def _business_judge(
             "revenue_impact": "unknown",
             "evidence": result["_error"],
             "_error": result["_error"],
+            "_tier_log": result.get("_tier_log", ""),
         }
 
     result.setdefault("business_score", None)
@@ -1227,6 +1259,8 @@ def _aggregate_ensemble(
     # ── Track errors and completion ──────────────────────────────────────
     all_judges = {"quality": quality, "safety": safety, "persona": persona, "business": business}
     error_judges = [name for name, j in all_judges.items() if j.get("_error")]
+    # Collect tier logs from failed judges for debugging visibility
+    tier_logs = {name: j.get("_tier_log", "") for name, j in all_judges.items() if j.get("_tier_log")}
     has_errors = len(error_judges) > 0
     completion_ratio = (4 - len(error_judges)) / 4
 
@@ -1352,9 +1386,20 @@ def _aggregate_ensemble(
     dominant_concern = ""
 
     if completion_ratio < 0.75:
+        # Build detailed failure info from tier logs
+        failure_details = []
+        for jname in error_judges:
+            log = tier_logs.get(jname, "")
+            if log:
+                failure_details.append(f"{jname.title()}: {log[:200]}")
+            else:
+                failure_details.append(f"{jname.title()}: error (no tier log)")
+        detail_block = " | ".join(failure_details) if failure_details else "No details available."
         dominant_concern = (
             f"WARNING: Incomplete evaluation — only {int(completion_ratio * 100)}% of judges returned valid data "
-            f"({', '.join(error_judges)} failed). Results may be unreliable. "
+            f"({', '.join(error_judges)} failed). "
+            f"Failure details: [{detail_block}]. "
+            f"Results may be unreliable. "
         )
 
     if scores[weakest] < 40:
@@ -1431,6 +1476,7 @@ def _aggregate_ensemble(
             "business": business,
         },
         "completion_ratio": completion_ratio,
+        "tier_logs": tier_logs,
     }
 
 
