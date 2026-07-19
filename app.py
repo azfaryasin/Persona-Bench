@@ -23,11 +23,8 @@ from simulator import run_persona_conversation
 from judge import judge_transcript, JUDGE_DIMENSIONS
 from target_agent import TARGET_CONFIGS
 from report import generate_report, optimize_system_prompt
-from persona_bench_bot_server import bot_router
 
 app = FastAPI(title="Persona Bench")
-
-app.include_router(bot_router, prefix="/bot")
 
 # In-memory store — fine for a hackathon demo
 RESULTS: dict[str, dict] = {}

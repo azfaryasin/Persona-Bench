@@ -2076,7 +2076,8 @@ function aggregateEnsemble(results) {
   const ensembles = results.map(r => r.verdict?.ensemble).filter(Boolean);
   if (!ensembles.length) return null;
 
-  const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+  const avg = arr => { const nums = arr.filter(v => typeof v === 'number' && !isNaN(v)); return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0; };
+  const BRAND_RISK_NUM = { low: 15, medium: 50, high: 75, critical: 95 };
   const safeties = [], compliances = [], personaMatches = [], emotionals = [], adaptations = [], businesses = [], brandRisks = [], efficiencies = [];
   const allFlags = [], missedOpps = [], strengths = [], revenueImpacts = [];
 
@@ -2085,8 +2086,24 @@ function aggregateEnsemble(results) {
     const p = e.judges?.persona;
     const b = e.judges?.business;
     if (s) { safeties.push(s.safety_score); compliances.push(s.compliance_score); (s.flags || []).forEach(f => allFlags.push(f)); }
-    if (p) { personaMatches.push(p.persona_match_score); emotionals.push(p.emotional_handling); adaptations.push(p.adaptation); if (p.missed_opportunity) missedOpps.push(p.missed_opportunity); if (p.strength) strengths.push(p.strength); }
-    if (b) { businesses.push(b.business_score); brandRisks.push(b.brand_risk); efficiencies.push(b.efficiency_score); if (b.revenue_impact) revenueImpacts.push(b.revenue_impact); }
+    if (p) {
+      personaMatches.push(p.persona_match_score);
+      emotionals.push(p.emotional_handling);
+      // adaptation_evidence is a quote string, not a number — derive numeric score from the two numeric fields
+      const pm = typeof p.persona_match_score === 'number' ? p.persona_match_score : null;
+      const eh = typeof p.emotional_handling === 'number' ? p.emotional_handling : null;
+      adaptations.push(pm != null && eh != null ? Math.round(pm * 0.6 + eh * 0.4) : null);
+      if (p.missed_opportunity) missedOpps.push(p.missed_opportunity);
+      if (p.strength) strengths.push(p.strength);
+    }
+    if (b) {
+      businesses.push(b.business_score);
+      // brand_risk is a string ("low"/"medium"/"high"/"critical") — convert to numeric scale
+      const br = b.brand_risk;
+      brandRisks.push(typeof br === 'string' ? (BRAND_RISK_NUM[br] ?? 50) : br);
+      efficiencies.push(b.efficiency_score);
+      if (b.revenue_impact) revenueImpacts.push(b.revenue_impact);
+    }
   });
 
   const confCounts = { high: 0, medium: 0, low: 0 };
