@@ -1,12 +1,3 @@
-"""
-FastAPI app: the endpoints the frontend calls.
-
-Run locally:
-    export OPENAI_API_KEY=sk-...
-    uvicorn app:app --reload
-
-Then open http://localhost:8000
-"""
 
 import os
 import uuid
@@ -24,6 +15,7 @@ import judge as judge_module
 from judge import judge_transcript, JUDGE_DIMENSIONS
 from target_agent import TARGET_CONFIGS
 from report import generate_report, optimize_system_prompt
+from persona_bench_bot_server import bot_router
 
 app = FastAPI(title="Persona Bench")
 
@@ -31,6 +23,7 @@ app = FastAPI(title="Persona Bench")
 RESULTS: dict[str, dict] = {}
 ALL_RUN_IDS: list[str] = []  # ordered list for frontend to list runs
 
+app.include_router(bot_router, prefix="/bot")
 
 class RunEvalRequest(BaseModel):
     persona_keys: list[str] = []  # default: all personas for the selected niche
