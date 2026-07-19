@@ -20,21 +20,17 @@ _static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
 
 from personas import PERSONAS, NICHE_LABELS, ALL_NICHES, get_personas_for_niche
 from simulator import run_persona_conversation
+import judge as judge_module
 from judge import judge_transcript, JUDGE_DIMENSIONS
 from target_agent import TARGET_CONFIGS
 from report import generate_report, optimize_system_prompt
-from persona_bench_bot_server import bot_router
 
 app = FastAPI(title="Persona Bench")
-
-# Track whether the NVIDIA filter evasion code is loaded
-_JUDGE_HAS_FILTER_EVASION = hasattr(judge, '_FILTER_WORD_MAP') and hasattr(judge, '_build_nvidia_safe_prompt')
 
 # In-memory store — fine for a hackathon demo
 RESULTS: dict[str, dict] = {}
 ALL_RUN_IDS: list[str] = []  # ordered list for frontend to list runs
 
-app.include_router(bot_router, prefix="/bot")
 
 class RunEvalRequest(BaseModel):
     persona_keys: list[str] = []  # default: all personas for the selected niche
