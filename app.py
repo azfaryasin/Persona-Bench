@@ -1,13 +1,3 @@
-"""
-FastAPI app: the endpoints the frontend calls.
-
-Run locally:
-    export OPENAI_API_KEY=sk-...
-    uvicorn app:app --reload
-
-Then open http://localhost:8000
-"""
-
 import os
 import uuid
 import asyncio
@@ -197,7 +187,6 @@ async def list_personas(niche: str = "general"):
 # Report endpoints
 # ---------------------------------------------------------------------------
 
-# (report page is now served by the SPA in static/index.html)
 
 
 @app.get("/report/{run_id}/data")

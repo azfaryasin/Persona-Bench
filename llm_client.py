@@ -1,11 +1,3 @@
-"""
-Shared OpenAI client configuration.
-
-Reads OPENAI_API_KEY from the environment.
-Optionally reads OPENAI_BASE_URL to point at a compatible proxy.
-Falls back to z-ai config for local testing.
-On Railway/production: set OPENAI_API_KEY and optionally OPENAI_BASE_URL.
-"""
 
 import os
 import json
@@ -14,7 +6,6 @@ from openai import AsyncOpenAI, RateLimitError
 
 
 def _load_zai_config():
-    """Try to load z-ai config as a fallback for local testing."""
     for path in [os.path.join(os.getcwd(), ".z-ai-config"),
                  os.path.join(os.path.expanduser("~"), ".z-ai-config"),
                  "/etc/.z-ai-config"]:
@@ -31,7 +22,6 @@ def create_client() -> AsyncOpenAI:
     base_url = os.environ.get("OPENAI_BASE_URL")
     zai_config = None
 
-    # Fallback: try z-ai config if no OPENAI_API_KEY is set
     if not api_key:
         zai_config = _load_zai_config()
         if zai_config:

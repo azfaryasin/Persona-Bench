@@ -1,24 +1,3 @@
-# ═══════════════════════════════════════════════════════════════════════════
-# PERSONA-BENCH BOT SERVER — Drop into your existing FastAPI app
-# ═══════════════════════════════════════════════════════════════════════════
-#
-# SETUP:
-#   1. pip install openai fastapi
-#   2. Set env vars:
-#      OPENAI_API_KEY=sk-...          (required)
-#      OPENAI_BASE_URL=https://...    (optional, defaults to OpenAI)
-#      OPENAI_MODEL=gpt-4o            (optional, defaults to gpt-4o)
-#
-# USAGE IN YOUR FASTAPI APP:
-#   from persona_bench_bot_server_fastapi import bot_router
-#   app.include_router(bot_router, prefix='/bot')
-#
-# ENDPOINTS:
-#   GET  /bot/health              → { status, uptime, requests }
-#   GET  /bot/config              → { niche, systemPrompt, modelName }
-#   POST /bot/config              → update niche/prompt/model
-#   POST /bot/v1/chat/completions → OpenAI-compatible chat proxy
-# ═══════════════════════════════════════════════════════════════════════════
 
 import os
 import time
