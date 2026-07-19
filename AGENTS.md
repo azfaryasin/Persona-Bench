@@ -1,106 +1,49 @@
-# Persona Bench — Agent Guide
+# AGENTS.md
 
-## What This Is
-Persona Bench evaluates AI customer-support chatbots by simulating adversarial user personas, running multi-turn conversations, and scoring each transcript with a separate LLM judge. It's designed to catch hallucinations, task failures, and topic drift that human QA would miss.
+Context for AI coding agents working on this repository.
 
-## Architecture (6 files that matter)
+## What this project is
 
-```
-┌─────────────┐     ┌──────────────┐     ┌──────────────────┐
-│  personas.py │────▶│ simulator.py │────▶│ target_agent.py  │
-│  (who to     │     │ (runs multi- │     │ (built-in bots OR│
-│   simulate)  │     │  turn convo) │     │  custom_agent)   │
-└─────────────┘     └──────┬───────┘     └──────────────────┘
-                           │ transcript           ▲
-                           ▼                      │
-                    ┌──────────────┐       ┌──────────────┐
-                    │  judge.py    │       │ custom_agent │
-                    │ (LLM-as-judge│       │  .py (BYO)   │
-                    │  scoring)    │       └──────────────┘
-                    └──────────────┘
-```
+Persona Bench is an AI agent evaluation harness. It simulates realistic user personas talking to a target chatbot/agent, then scores the resulting conversations using a multi-judge LLM ensemble. The goal is to catch hallucinations, safety issues, and quality problems before a real user does.
 
-- **`llm_client.py`** — Shared AsyncOpenAI client + `call_with_retry()` with exponential backoff (5s/10s/20s, catches `RateLimitError`). Reads `OPENAI_API_KEY` from env; falls back to `/etc/.z-ai-config` for local dev.
-- **`personas.py`** — Dict of 4 personas, each with a `system_prompt` and `opening_message`. Edit these to target different bot categories. No code changes needed elsewhere.
-- **`target_agent.py`** — Two built-in configs (`weak` and `improved`). When `target_config="__custom__"`, routes through `custom_agent.call_custom_target()`. Exports `_custom_target_config` dict for app.py to inject.
-- **`custom_agent.py`** — "Bring Your Own Agent" support. Calls any HTTP chatbot API using a configurable body template with `{{message}}`/`{{history}}` placeholders and a dot-notation `response_path` to extract the reply. 15s timeout, defensive error handling, returns error strings instead of crashing.
-- **`simulator.py`** — Orchestrates conversation: persona sends message → target agent replies → persona responds → repeat. Maintains dual message views (target's POV vs persona's POV).
-- **`judge.py`** — Takes a completed transcript and returns structured JSON: hallucination_detected, task_completed, stayed_on_topic, overall_verdict (pass/fail), notes.
-- **`app.py`** — FastAPI server. `POST /run-eval` accepts `target_config` (weak/improved) or `custom_target` dict (url, headers, body_template, response_path). Validates URLs and routes accordingly.
-- **`static/index.html`** — Vanilla JS frontend. Built-in buttons + collapsible "Test Your Own Agent" section with form fields and inline validation. Side-by-side comparison panels with pass/fail/hallucination counts.
+## Architecture
 
-## Key Decisions
-- **OpenAI SDK** (AsyncOpenAI) — not Anthropic. Uses `gpt-4o-mini` by default (cheap, fast).
-- **System prompt in messages array** — OpenAI format, not Anthropic's separate `system` param.
-- **Error handling** — Each persona eval is try/except'd. One failure doesn't crash the run; it shows as "error" verdict.
-- **In-memory storage** — `RESULTS` dict in app.py. Pruned to last 20 runs. Fine for hackathon; swap for SQLite/Postgres later.
-- **No framework** — Plain Python/FastAPI backend, vanilla JS frontend. Single `index.html`.
+Single FastAPI backend serving a single-file vanilla JS frontend (`static/index.html`) — no separate frontend framework, no build step. Keep it this way; a prior attempt to split this into a Next.js frontend broke the deployment and introduced a command-injection vulnerability. Do not reintroduce a separate frontend service.
 
-## How to Run
-```bash
-export OPENAI_API_KEY=sk-...
-uvicorn app:app --host 0.0.0.0 --port $PORT --reload
-```
+**Core flow**: `simulator.py` runs a persona against a target agent (`target_agent.py` for built-in demo configs, `custom_agent.py` for user-supplied external endpoints) → produces a transcript → `judge.py` scores it via a multi-judge ensemble → `report.py` aggregates results across personas into a human-readable report.
 
-## How to Demo (the 3-click story)
-1. Click **"Run Weak Bot"** — the hallucination-prone support bot gets tested by all 4 personas. Watch the hallucination count climb.
-2. Click **"Run Improved Bot"** — the safe-fallback bot gets tested. Watch hallucinations drop to zero.
-3. The side-by-side panels make the improvement obvious at a glance. Expand any card to read the full transcript and see exactly what the weak bot fabricated.
+## Conventions
 
-## Adding a New Persona
-Add an entry to `PERSONAS` in `personas.py`:
-```python
-"my_persona": {
-    "name": "Display Name",
-    "system_prompt": "Instructions for how to role-play...",
-    "opening_message": "First thing this user would say...",
-},
-```
+- **LLM calls**: always go through `llm_client.py`'s `call_with_retry()` — never call `client.chat.completions.create()` directly from another module. This wrapper handles rate-limit retries with exponential backoff.
+- **Content extraction**: always use `extract_content()` in `llm_client.py` to pull text from an LLM response — never call `.content.strip()` directly. Some providers (notably NVIDIA NIM) return `None` content on `finish_reason == "content_filter"`, which crashes naive `.strip()` calls.
+- **Provider portability**: this app is built to be provider-agnostic via `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` environment variables. Don't hardcode a model name or base URL anywhere in application code — read from environment only.
+- **Score parsing**: judge/report output field types can vary between providers (a score field may come back as a raw int in some cases, a nested dict in others). Any code reading judge output fields should type-check before calling `.get()` on it.
 
-## Adding a New Target Config
-Add an entry to `TARGET_CONFIGS` in `target_agent.py`:
-```python
-"my_config": {
-    "name": "My Config Label",
-    "system_prompt": "System prompt for this bot version...",
-},
-```
+## Known past bugs (avoid reintroducing)
 
-## Testing Your Own Agent (BYO)
-Persona Bench can test any HTTP chatbot API, not just the built-in configs.
+1. **Dockerfile CMD must use shell form** — `CMD ["sh", "-c", "uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}"]`. Exec-form JSON array CMD does not expand `${PORT}`, which breaks deployment on Railway.
+2. **Command injection**: a prior version had a Next.js API route that shelled out to a Python CLI using `execSync` with an unsanitized query parameter. Never shell out to subprocess calls with user-supplied input.
+3. **NaN fields in reports**: judge output must always return every required field (Adaptation, Brand Risk, etc.), even if the value is a conservative default — never omit a field, as this produces NaN in aggregated report averages.
+4. **Confidence must reflect completion rate**: if fewer than ~75% of persona tests complete successfully, the report's confidence level and overall verdict must reflect that — never present a high-confidence numeric score based on a majority-failed run.
 
-### The Contract
-Your agent endpoint must:
-1. Accept a JSON POST with the user's message
-2. Return a JSON response with the reply text somewhere in it
-
-### How to Configure
-Use the "Test Your Own Agent" panel in the UI, or POST directly:
+## Running locally
 
 ```bash
-curl -X POST /run-eval -H "Content-Type: application/json" -d '{
-  "persona_keys": ["adversarial"],
-  "num_turns": 3,
-  "target_config": "weak",
-  "custom_target": {
-    "url": "https://your-agent-api.com/chat",
-    "headers": {"Authorization": "Bearer YOUR_KEY"},
-    "body_template": "{\"message\": \"{{message}}\"}",
-    "response_path": "reply"
-  }
-}'
+python -m venv .venv
+source .venv/bin/activate  # or .venv/bin/activate.fish for fish shell
+pip install -r requirements.txt
+export OPENAI_API_KEY=... OPENAI_BASE_URL=... OPENAI_MODEL=...
+uvicorn app:app --reload
 ```
 
-### Template Placeholders
-- `{{message}}` — the latest user message (string). Put this **inside** JSON string quotes.
-- `{{history}}` — the full conversation as a JSON array of `{role, content}` objects. Put this **outside** quotes.
+## Testing changes
 
-Examples:
-| API shape | body_template | response_path |
-|-----------|--------------|---------------|
-| `{"message": "hi", "reply": "hello"}` | `{"message": "{{message}}"}` | `reply` |
-| OpenAI-compatible | `{"messages": {{history}}, "model": "gpt-4"}` | `choices.0.message.content` |
-| Simple wrapper | `{"prompt": "{{message}}", "n": 1}` | `completions.0.text` |
+There is no formal test suite yet. When making changes:
+1. Run the app locally and manually exercise the affected endpoint(s) via the UI or `curl`
+2. For judge/scoring changes, run a full evaluation and read the actual report output — don't just confirm the code runs without error, confirm the scores make sense
+3. For provider/model changes, test across at least two different niches, including one that touches sensitive topics (e.g. healthcare), since content-filtering behavior varies by provider
 
-### Error Handling
-If your agent is unreachable, times out (15s limit), returns non-JSON, or the `response_path` doesn't exist in the response, the transcript will contain the error message as the agent's "reply" and the judge will score accordingly. The eval run continues — one broken agent response doesn't crash the whole evaluation.
+## Things to be cautious about
+
+- Multi-Judge Ensemble and Consistency Check modes multiply API call volume (up to ~6-8x baseline) — be mindful of rate limits and token budgets when testing these paths repeatedly
+- The Bot Builder feature (`custom_agent.py` + a standalone bot server) is separate from the core evaluation flow — if it's not working, it does not block the core weak/improved evaluation and report generation
