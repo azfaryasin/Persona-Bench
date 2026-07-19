@@ -1,54 +1,109 @@
-# Persona Bench
+# 🧪 Persona Bench
 
-Simulate realistic user personas against an AI chatbot/agent and catch
-hallucinations, off-topic drift, and task failures before real users do.
+**Catch AI chatbot failures before your users do.**
 
-## Why this matters
-Teams shipping AI agents rarely test beyond "does it work when I chat
-with it nicely." Persona Bench runs a battery of adversarial, confused,
-distracted, and impatient users against your agent automatically, then
-has a second LLM judge each conversation against a rubric.
+Persona Bench simulates realistic, adversarial, and edge-case users talking to your AI agent — then uses a multi-judge LLM ensemble to score every conversation for hallucinations, safety, task completion, and persona fit. It turns "vibes-based testing" into a repeatable, evidence-grounded evaluation pipeline.
 
-## Quick start
+Built for the OpenAI × NamasteDev Codex Hackathon 2026.
+
+---
+
+## Why this exists
+
+Every team shipping an AI agent has the same blind spot: you chat with your own bot a few times, it seems fine, you ship it — and then a real user asks something you never tried, and the bot fabricates a policy, a URL, or a refund guarantee that doesn't exist. Persona Bench automates the part manual QA can't scale: running your agent through a battery of realistic and adversarial personas, and having a second AI grade every response against evidence from the transcript, not vibes.
+
+## What it does
+
+- **Simulates 4+ user personas** (confused first-timer, adversarial tester, topic-switcher, impatient user) having real multi-turn conversations with your target agent
+- **Multi-Judge Ensemble** scores every conversation across four dimensions — Safety & Compliance, Persona & UX, Business & Strategy, Quality — with evidence-grounded reasoning, not just a number
+- **Catches hallucinations** — flags fabricated facts, policies, or URLs with a direct citation from the transcript
+- **Niche-specific testing** — built-in personas for customer support, healthcare, e-commerce, and legal, plus on-the-fly generation for any other industry
+- **Bring-your-own-agent** — point the harness at any HTTP endpoint, not just the built-in demo bots
+- **AI-generated reports** — executive summary, key strengths, critical gaps, prioritized action items, and a risk assessment, ready to hand to a stakeholder
+- **Consistency verification** — re-runs the judge on the same transcript to measure scoring stability, so you know the evaluation itself is trustworthy
+
+## How it works
+
+```
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐
+│   Persona    │─────▶│   Target      │─────▶│    Judge     │
+│  Simulator   │◀─────│    Agent      │      │  (Ensemble)  │
+└─────────────┘      └──────────────┘      └─────────────┘
+       │                                            │
+       └────────────── transcript ──────────────────┘
+                            │
+                            ▼
+                    ┌───────────────┐
+                    │  Report Gen    │
+                    │ (exec summary, │
+                    │  action items) │
+                    └───────────────┘
+```
+
+1. A persona (simulated user) has a multi-turn conversation with the target agent
+2. The full transcript is scored by a Multi-Judge Ensemble — each judge grounds its score in specific transcript evidence
+3. Scores across all personas are aggregated into a report with an overall risk verdict, confidence level, and prioritized fixes
+
+## Tech stack
+
+- **Backend**: Python, FastAPI
+- **Frontend**: Vanilla HTML/CSS/JS (no build step, no framework)
+- **LLM layer**: OpenAI-compatible client — works with Groq, NVIDIA NIM, SambaNova, or any OpenAI-compatible endpoint
+- **Deployment**: Docker, Railway
+
+## Getting started
 
 ```bash
+git clone https://github.com/<your-username>/persona-bench.git
+cd persona-bench
+python -m venv .venv
+source .venv/bin/activate   # or .venv/bin/activate.fish
 pip install -r requirements.txt
-export OPENAI_API_KEY=sk-...
+```
+
+Set your environment variables:
+```bash
+export OPENAI_API_KEY=your_api_key
+export OPENAI_BASE_URL=https://api.your-provider.com/v1
+export OPENAI_MODEL=your-model-name
+```
+
+Run it:
+```bash
 uvicorn app:app --reload
 ```
 
-Open http://localhost:8000 and click "Run Weak Bot" or "Run Improved Bot."
+Open `http://localhost:8000` in your browser.
 
 ## Project structure
-- `llm_client.py` — shared OpenAI client with retry/backoff
-- `personas.py` — the simulated user types (edit these to fit your demo)
-- `target_agent.py` — built-in chatbot configs (weak/improved) + custom agent routing
-- `custom_agent.py` — "Bring Your Own Agent" HTTP caller with body templates
-- `simulator.py` — runs multi-turn async conversations between persona and agent
-- `judge.py` — LLM-as-judge scoring against a rubric (hallucination, task success, tone)
-- `app.py` — FastAPI endpoints (`POST /run-eval`, `GET /results/{id}`, `GET /runs`)
-- `static/index.html` — frontend with side-by-side comparison + BYO agent panel
 
-## Testing your own agent
-
-Point Persona Bench at any HTTP chatbot API using the "Test Your Own Agent"
-panel in the UI. You need three things:
-
-1. **Endpoint URL** — your agent's HTTP endpoint
-2. **Body Template** — a JSON string with `{{message}}` (latest user msg) and/or `{{history}}` (full conversation array) placeholders
-3. **Response Path** — dot-notation to extract the reply (e.g. `reply`, `choices.0.message.content`)
-
-Example for a simple agent:
-- URL: `https://my-bot.example.com/chat`
-- Body Template: `{"message": "{{message}}"}`
-- Response Path: `reply`
+| File | Purpose |
+|---|---|
+| `app.py` | FastAPI server — all API endpoints |
+| `llm_client.py` | Shared LLM client, retry/backoff logic, safe content extraction |
+| `personas.py` | Persona definitions (built-in + dynamically generated by niche) |
+| `simulator.py` | Runs multi-turn conversations between a persona and the target agent |
+| `target_agent.py` | Demo target agent configs (weak / improved) |
+| `custom_agent.py` | Bring-your-own-agent — calls any external HTTP endpoint |
+| `judge.py` | Multi-judge ensemble scoring, evidence-grounded rubric |
+| `report.py` | AI-generated report: executive summary, action items, risk assessment |
+| `static/index.html` | Frontend — single-file, no build step |
 
 ## Deploying
-Railway or Render both support this directly — push this repo, set
-`OPENAI_API_KEY` as an env var. The Dockerfile handles the rest.
 
-## Demo framing (per hackathon judging criteria)
-Don't pitch this as "an eval framework." Pitch it as:
-**"Before you ship your AI agent, know how it breaks."**
-Show a concrete failure Persona Bench caught that a human tester would
-have missed — that's your innovation + impact story in one shot.
+This repo includes a `Dockerfile` and deploys cleanly to Railway:
+
+1. Push to GitHub
+2. Railway → New Project → Deploy from GitHub repo
+3. Set `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `OPENAI_MODEL` in the Variables tab
+4. Railway auto-detects the Dockerfile and deploys
+
+## Known limitations
+
+- LLM-as-judge scoring, while evidence-grounded and consistency-tested, is not infallible — transcripts and reasoning are always shown alongside verdicts so a human can verify
+- Report generation and evaluation quality depend on the underlying LLM provider; behavior can vary between providers on edge cases (e.g. content filtering on sensitive topics)
+- Bring-your-own-agent support expects a documented request/response contract (see in-app configuration for details)
+
+## License
+
+MIT
