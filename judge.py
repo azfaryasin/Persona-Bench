@@ -284,6 +284,8 @@ async def _safe_judge_call(system_prompt: str, user_message: str,
     safe_transcript = _preprocess_transcript(user_message, niche=niche)
 
     try:
+        print(f"[{judge_name}] Attempt 1/3 (proactive sanitization, niche={niche})")
+        print(f"[{judge_name}] Prompt length: {len(safe_prompt)} chars, Transcript length: {len(safe_transcript)} chars")
         response = await call_with_retry(
             model=MODEL,
             max_tokens=max_tokens,
@@ -294,6 +296,7 @@ async def _safe_judge_call(system_prompt: str, user_message: str,
             ],
         )
         raw = extract_content(response, caller=f"judge:{judge_name}")
+        print(f"[{judge_name}] Response length: {len(raw) if raw else 0} chars, first 100: {repr(raw[:100]) if raw else 'None'}")
 
         # ── RETRY 1: strip examples + re-sanitize ──
         if _is_filtered_response(raw):
@@ -339,6 +342,7 @@ async def _safe_judge_call(system_prompt: str, user_message: str,
 
         return _parse_judge_json(raw, judge_name)
     except Exception as e:
+        print(f"[{judge_name}] EXCEPTION: {type(e).__name__}: {e}")
         return {"_error": f"{judge_name} call failed: {e}"}
 
 
