@@ -6,6 +6,14 @@ Persona Bench simulates realistic, adversarial, and edge-case users talking to y
 
 Built for the OpenAI × NamasteDev Codex Hackathon 2026.
 
+
+
+
+https://github.com/user-attachments/assets/29e719b1-3a08-4f85-bc9a-0573b45aee50
+
+
+
+
 ---
 
 🔗 **Live Demo:** https://persona-bench-production.up.railway.app/
