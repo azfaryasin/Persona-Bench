@@ -47,3 +47,5 @@ There is no formal test suite yet. When making changes:
 
 - Multi-Judge Ensemble and Consistency Check modes multiply API call volume (up to ~6-8x baseline) — be mindful of rate limits and token budgets when testing these paths repeatedly
 - The Bot Builder feature (`custom_agent.py` + a standalone bot server) is separate from the core evaluation flow — if it's not working, it does not block the core weak/improved evaluation and report generation
+
+
