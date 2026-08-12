@@ -1,15 +1,3 @@
-
-"""
-Target agent: the customer support bot being evaluated.
-
-Two built-in configurations:
-  - "weak":     prone to guessing/hallucinating when it doesn't know an answer
-  - "improved": explicitly instructed to say "I don't know" and escalate
-
-When target_config="__custom__", routes through custom_agent.call_custom_target
-using the config stored in _custom_target_config["config"].
-"""
-
 from llm_client import call_with_retry, MODEL, extract_content
 
 TARGET_CONFIGS = {
