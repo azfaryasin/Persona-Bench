@@ -1,11 +1,3 @@
-"""
-Shared OpenAI client configuration.
-
-Reads OPENAI_API_KEY from the environment.
-Optionally reads OPENAI_BASE_URL to point at a compatible proxy.
-Falls back to z-ai config for local testing.
-On Railway/production: set OPENAI_API_KEY and optionally OPENAI_BASE_URL.
-"""
 
 import os
 import json
@@ -31,7 +23,7 @@ def create_client() -> AsyncOpenAI:
     base_url = os.environ.get("OPENAI_BASE_URL")
     zai_config = None
 
-    # Fallback: try z-ai config if no OPENAI_API_KEY is set
+    
     if not api_key:
         zai_config = _load_zai_config()
         if zai_config:
@@ -47,7 +39,7 @@ def create_client() -> AsyncOpenAI:
     kwargs = {"api_key": api_key}
     if base_url:
         kwargs["base_url"] = base_url
-        # z-ai proxy requires these headers for authentication
+        
         headers = {"X-Z-AI-From": "Z"}
         if zai_config and zai_config.get("token"):
             headers["X-Token"] = zai_config["token"]
@@ -60,13 +52,13 @@ def create_client() -> AsyncOpenAI:
     return AsyncOpenAI(**kwargs)
 
 
-# Shared client instance used by all modules
+
 client = create_client()
 
-# Model to use for all calls (override with OPENAI_MODEL env var)
+
 MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
 
-# Retry backoff delays in seconds: 5s, 10s, 20s
+
 _RETRY_DELAYS = [5, 10, 20]
 
 
@@ -86,7 +78,7 @@ def extract_content(response, caller: str = "unknown") -> str:
     Returns:
         The content string (stripped), or a descriptive placeholder if None/empty.
     """
-    # Guard: no choices at all
+    
     if not response or not response.choices:
         print(f"[{caller}] WARNING: API response has no choices. Full response: {response}")
         return "[No response from API]"
@@ -96,7 +88,7 @@ def extract_content(response, caller: str = "unknown") -> str:
     content = choice.message.content if choice.message else None
 
     if content is None:
-        # Log the raw finish_reason — this is the diagnostic the user needs
+        
         print(f"[{caller}] WARNING: content is None. finish_reason={finish_reason!r}")
         if finish_reason == "content_filter":
             return "[Response blocked by content filter]"
@@ -126,5 +118,5 @@ async def call_with_retry(**kwargs):
             last_error = e
             print(f"Rate limited, retrying in {delay}s... (attempt {attempt + 1}/3)")
             await asyncio.sleep(delay)
-    # All retries exhausted — raise the last error
+    
     raise last_error
