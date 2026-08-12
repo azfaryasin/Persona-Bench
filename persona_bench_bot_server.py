@@ -12,7 +12,6 @@ from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
-# ─── Pydantic Models ─────────────────────────────────────────────────────────
 
 
 class ChatMessage(BaseModel):
@@ -29,7 +28,6 @@ class ConfigUpdate(BaseModel):
     systemPrompt: Optional[str] = None
     modelName: Optional[str] = None
 
-# ─── Config ──────────────────────────────────────────────────────────────────
 
 DEFAULT_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 
@@ -39,7 +37,7 @@ config = {
     "modelName": DEFAULT_MODEL,
 }
 
-# ─── OpenAI Client (lazy init) ───────────────────────────────────────────────
+
 
 _openai_client = None
 _client_lock = threading.Lock()
@@ -49,7 +47,7 @@ def _get_openai():
     global _openai_client
     if _openai_client is None:
         with _client_lock:
-            if _openai_client is None:  # double-check
+            if _openai_client is None:  
                 api_key = os.environ.get("OPENAI_API_KEY")
                 if not api_key:
                     raise RuntimeError("OPENAI_API_KEY environment variable is not set")
@@ -61,7 +59,7 @@ def _get_openai():
                 logger.info("[bot] OpenAI client initialized (model: %s)", config["modelName"])
     return _openai_client
 
-# ─── System Prompts ──────────────────────────────────────────────────────────
+
 
 SYSTEM_PROMPTS = {
     "general": (
@@ -96,21 +94,20 @@ SYSTEM_PROMPTS = {
     ),
 }
 
-# Set initial prompt
+
 config["systemPrompt"] = SYSTEM_PROMPTS.get("general", "")
 
-# ─── State ───────────────────────────────────────────────────────────────────
+
 
 start_time = time.time()
 request_count = 0
 _count_lock = threading.Lock()
 
-# ─── Router ──────────────────────────────────────────────────────────────────
+
 
 bot_router = APIRouter()
 
 
-# ─── Health ──────────────────────────────────────────────────────────────────
 
 
 @bot_router.get("/health")
@@ -122,7 +119,7 @@ async def health():
     }
 
 
-# ─── Config ──────────────────────────────────────────────────────────────────
+
 
 
 @bot_router.get("/config")
@@ -151,7 +148,7 @@ async def update_config(body: ConfigUpdate):
         return JSONResponse(status_code=500, content={"error": "Failed to update config"})
 
 
-# ─── Chat Completions (OpenAI-Compatible) ────────────────────────────────────
+
 
 
 @bot_router.post("/v1/chat/completions")
@@ -172,7 +169,7 @@ async def chat_completions(body: ChatRequest):
                 }
             })
 
-        # Build messages: system prompt first, then conversation
+        
         api_messages = []
 
         if config["systemPrompt"]:
