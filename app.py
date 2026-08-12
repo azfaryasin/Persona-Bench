@@ -19,21 +19,20 @@ from persona_bench_bot_server import bot_router
 
 app = FastAPI(title="Persona Bench")
 
-# In-memory store — fine for a hackathon demo
 RESULTS: dict[str, dict] = {}
-ALL_RUN_IDS: list[str] = []  # ordered list for frontend to list runs
+ALL_RUN_IDS: list[str] = []  
 
 app.include_router(bot_router, prefix="/bot")
 
 class RunEvalRequest(BaseModel):
-    persona_keys: list[str] = []  # default: all personas for the selected niche
+    persona_keys: list[str] = []  
     num_turns: int = 5
     target_config: str = "weak"
     niche: str = "general"
-    ensemble: bool = True  # multi-judge ensemble; set False for legacy single judge
-    strict: bool = False  # True = 4 separate LLM calls (Advanced/Strict mode); False = 1 combined call
-    consistency_check: bool = False  # True = run judge twice to measure score stability
-    custom_target: dict | None = None  # BYO agent: {url, method, headers, body_template, response_path}
+    ensemble: bool = True 
+    strict: bool = False  
+    consistency_check: bool = False  
+    custom_target: dict | None = None  
 
 
 def _validate_url(url: str) -> str | None:
@@ -56,10 +55,10 @@ async def run_eval(req: RunEvalRequest):
     if not niche_personas:
         return {"error": f"No personas available for niche '{req.niche}'. Try a built-in niche."}
 
-    # If persona_keys not specified, run all for this niche
+    
     persona_keys = req.persona_keys or list(niche_personas.keys())
 
-    # If custom_target is provided, it takes priority over target_config
+    
     use_custom = req.custom_target is not None
 
     if use_custom:
@@ -75,7 +74,7 @@ async def run_eval(req: RunEvalRequest):
         config_key = "custom"
         config_label = run_label
     else:
-        # Validate target_config (built-in weak/improved)
+      
         if req.target_config not in TARGET_CONFIGS:
             return {"error": f"Unknown target_config. Must be one of: {list(TARGET_CONFIGS.keys())}"}
         config_key = req.target_config
@@ -95,7 +94,7 @@ async def run_eval(req: RunEvalRequest):
         "error": None,
     }
     ALL_RUN_IDS.append(run_id)
-    # Keep only the last 20 runs to avoid unbounded memory growth
+    
     while len(ALL_RUN_IDS) > 20:
         old_id = ALL_RUN_IDS.pop(0)
         RESULTS.pop(old_id, None)
@@ -117,7 +116,7 @@ async def run_eval(req: RunEvalRequest):
                 )
                 scored.append({**convo, "verdict": verdict})
             except Exception as e:
-                # Don't let one bad persona crash the whole eval
+            
                 scored.append({
                     "persona_key": pk,
                     "persona_name": niche_personas.get(pk, {}).get("name", pk),
@@ -134,8 +133,7 @@ async def run_eval(req: RunEvalRequest):
         RESULTS[run_id]["status"] = "done"
         RESULTS[run_id]["results"] = scored
 
-    # If custom, inject the custom_target config into target_agent so
-    # the simulator's call_target_agent uses it
+   
     if use_custom:
         from target_agent import _custom_target_config
         _custom_target_config["config"] = req.custom_target
@@ -192,7 +190,7 @@ async def filter_check():
     has_judge_type = "judge_type" in sig.parameters
     has_4_tier = has_judge_type
 
-    # Test prompt sanitization on General niche
+    
     prompt = _build_combined_judge_prompt('general', 'Test')
     safe_prompt = _build_nvidia_safe_prompt(prompt)
 
@@ -209,7 +207,7 @@ async def filter_check():
         if t in full_text.lower():
             remaining.append(t)
 
-    # Test transcript sanitization for general niche (should now work)
+   
     test_transcript = 'User: This is dangerous and harmful\nAgent: OK'
     sanitized = _preprocess_transcript(test_transcript, 'general')
     transcript_sanitized = 'dangerous' not in sanitized and 'harmful' not in sanitized
@@ -223,9 +221,9 @@ async def filter_check():
         'has_4_tier_retry': has_4_tier,
         'has_ultra_minimal_fallback': has_ultra_minimal,
         'has_refusal_detection': has_refusal_check,
-        'has_markdown_fence_handling': True,  # v3: _is_valid_json_response now handles fenced JSON
-        'parse_first_logic': True,  # v3: _safe_judge_call tries _parse_judge_json before rejecting
-        'tier_log_propagation': True,  # v3: _tier_log field in error dicts
+        'has_markdown_fence_handling': True,  
+        'parse_first_logic': True,
+        'tier_log_propagation': True,  
         'safety_prompt_has_evidence_rule': 'EVIDENCE REQUIREMENT' in _SAFETY_SYSTEM_PROMPT,
         'diagnosis': (
             'v3 ACTIVE — parse-first logic (fixes markdown fence rejections) + tier logs in errors + 4-tier retry.'
@@ -255,11 +253,6 @@ async def list_personas(niche: str = "general"):
     return {k: v["name"] for k, v in personas.items()}
 
 
-# ---------------------------------------------------------------------------
-# Report endpoints
-# ---------------------------------------------------------------------------
-
-# (report page is now served by the SPA in static/index.html)
 
 
 @app.get("/report/{run_id}/data")
@@ -301,7 +294,7 @@ async def optimize_prompt_endpoint(run_id: str, body: dict | None = None):
     # Extract failures
     failures = [r for r in data["results"] if r.get("verdict", {}).get("overall_verdict") == "fail"]
     if not failures:
-        failures = data["results"]  # if no hard fails, use all results for improvement
+        failures = data["results"] 
 
     current_prompt = None
     if body and body.get("current_prompt"):
@@ -318,16 +311,11 @@ async def optimize_prompt_endpoint(run_id: str, body: dict | None = None):
         return {"error": f"Prompt optimization failed: {e}"}
 
 
-# ---------------------------------------------------------------------------
-# Shareable report URL: serve the SPA shell so JS can hydrate the report
-# ---------------------------------------------------------------------------
+
 @app.get("/report/{run_id}")
 async def report_page(run_id: str):
     """Serve the frontend shell for /report/{run_id} — the SPA JS handles the rest."""
     return FileResponse(os.path.join(_static_dir, "index.html"))
 
 
-# ---------------------------------------------------------------------------
-# Serve the single-page HTML frontend
-# ---------------------------------------------------------------------------
 app.mount("/", StaticFiles(directory=_static_dir, html=True), name="static")
