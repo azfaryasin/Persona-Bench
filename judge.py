@@ -224,7 +224,7 @@ def _preprocess_transcript(transcript_str: str, niche: str = "general") -> str:
                 '[LEGAL_DETAIL]', sanitized, flags=re.IGNORECASE,
             )
 
-    -
+
     if "financial_terms" in triggers:
         for term in triggers["financial_terms"]:
             sanitized = re.sub(
